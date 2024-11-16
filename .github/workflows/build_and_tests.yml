@@ -1,0 +1,47 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - README.md
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+name: Clippy, fmt and tests
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+      
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+
+      - name: Install Just command runner
+        uses: extractions/setup-just@v1
+
+      - name: install ic-wasm
+        run: |
+          wget https://github.com/dfinity/ic-wasm/releases/download/0.8.1/ic-wasm-linux64 -O /usr/local/bin/ic-wasm
+          chmod +x /usr/local/bin/ic-wasm
+
+      - name: check rust code style
+        run: |
+          just check_code
+
+      - name: build
+        run: |
+          just build
+
+      - name: test
+        run: |
+          just test
