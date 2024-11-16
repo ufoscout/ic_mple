@@ -10,7 +10,7 @@ license = "MIT"
 version = "0.1.0"
 homepage = "https://github.com/ufoscout/ic_mple"
 repository = "https://github.com/ufoscout/ic_mple"
-keywords = ["IC", "PocketIC", "Internet Computer", "Dfinity"]
+keywords = ["IC", "PocketIC", "Dfinity"]
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 
 [workspace.dependencies]
