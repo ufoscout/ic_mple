@@ -4,10 +4,7 @@ set -x
 export RUST_BACKTRACE=full
 
 declare -a publish_list=(
-    "c3p0_common"
-    "c3p0_postgres"
-    "c3p0_sqlx"
-    "c3p0"
+    "src/ic_mple_pocket_ic"
 )
 
 for i in "${publish_list[@]}"
@@ -21,7 +18,7 @@ do
 
     cargo publish
     sleep 2
-    cd ..
+    cd ../..
     rc=$?
     if [[ $rc -ne 0 ]] ; then
         echo "Failure publishing $i";
