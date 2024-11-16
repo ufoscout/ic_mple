@@ -1,6 +1,25 @@
-[package]
-name = "ic_mple"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "2"
+members = [
+    "src/*",
+]
 
-[dependencies]
+[workspace.package]
+edition = "2021"
+license = "MIT"
+version = "0.1.0"
+homepage = "https://github.com/ufoscout/ic_mple"
+repository = "https://github.com/ufoscout/ic_mple"
+keywords = ["IC", "PocketIC", "Internet Computer", "Dfinity"]
+authors = ["Francesco Cina <ufoscout@gmail.com>"]
+
+[workspace.dependencies]
+candid = { version = "0.10" }
+flate2 = "1"
+ic-cdk = "0.17"
+log = "0.4"
+pocket-ic = "6"
+reqwest = { version = "0.12", default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "2"
+tokio = { version = "1", features = ["rt", "macros"] }
