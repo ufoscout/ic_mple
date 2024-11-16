@@ -9,5 +9,5 @@ clean:
 # Builds all artifacts
 [group('build')]
 build:
-cargo build 
-cargo build --all-features
+  cargo build 
+  cargo build --all-features
