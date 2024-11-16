@@ -1,12 +1,18 @@
+use std::fs::File;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Duration;
 use std::{env, fs};
 
+use ::pocket_ic::{nonblocking::PocketIc, PocketIcBuilder, WasmResult};
+use candid::{CandidType, Decode, Deserialize, Encode, Principal};
 use flate2::read::GzDecoder;
 use log::*;
-pub use pocket_ic::*;
+
+pub mod pocket_ic {
+    pub use pocket_ic::*;
+}
 
 const POCKET_IC_SERVER_VERSION: &str = "7.0.0";
 
@@ -21,7 +27,7 @@ const POCKET_IC_SERVER_VERSION: &str = "7.0.0";
 /// point to the binary. Also, the binary should be executable.
 ///
 /// It supports only linux and macos.
-pub fn get_pocket_ic_client() -> PocketIc {
+pub fn get_pocket_ic_client() -> PocketIcBuilder {
     static INITIALIZATION_STATUS: OnceLock<bool> = OnceLock::new();
 
     let status: &bool = INITIALIZATION_STATUS.get_or_init(|| {
@@ -53,7 +59,7 @@ pub fn get_pocket_ic_client() -> PocketIc {
         panic!("pocket-ic is not initialized");
     }
 
-    PocketIc::new()
+    PocketIcBuilder::new()
 }
 
 fn default_pocket_ic_server_dir() -> PathBuf {
@@ -131,6 +137,66 @@ fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
     }
 
     binary_file_path
+}
+
+/// Query a canister method and return the result.
+pub async fn query_call<T: CandidType, Result>(
+    pocket_ic: &PocketIc,
+    sender: Principal,
+    canister_id: Principal,
+    method: &str,
+    payload: &T,
+) -> Result
+where
+    for<'a> Result: CandidType + Deserialize<'a>,
+{
+    let payload = Encode!(payload).expect("failed to encode item to candid");
+    let res = match pocket_ic
+        .query_call(canister_id, sender, method, payload)
+        .await
+        .unwrap()
+    {
+        WasmResult::Reply(bytes) => bytes,
+        WasmResult::Reject(e) => panic!("Unexpected reject: {:?}", e),
+    };
+
+    Decode!(&res, Result).expect("failed to decode item from candid")
+}
+
+/// Call an update canister method and return the candid result.
+pub async fn update_call<T: CandidType, Result>(
+    pocket_ic: &PocketIc,
+    sender: Principal,
+    canister_id: Principal,
+    method: &str,
+    payload: &T,
+) -> Result
+where
+    for<'a> Result: CandidType + Deserialize<'a>,
+{
+    let payload = Encode!(payload).expect("failed to encode item to candid");
+    let res = match pocket_ic
+        .update_call(canister_id, sender, method, payload)
+        .await
+        .unwrap()
+    {
+        WasmResult::Reply(bytes) => bytes,
+        WasmResult::Reject(e) => panic!("Unexpected reject: {:?}", e),
+    };
+
+    Decode!(&res, Result).expect("failed to decode item from candid")
+}
+
+/// Load wasm bytes from a file.
+pub fn load_wasm_bytes(wasm_path: &str) -> Vec<u8> {
+    let path = PathBuf::from(wasm_path);
+    let mut f = File::open(path).expect("File does not exists");
+    let mut buffer = Vec::new();
+
+    f.read_to_end(&mut buffer)
+        .expect("Could not read file content");
+
+    buffer
 }
 
 #[test]
