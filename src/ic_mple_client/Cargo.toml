@@ -1,0 +1,27 @@
+[package]
+name = "ic_mple_client"
+description = "Simple client abstraction to interact with the Internet Computer canisters" 
+
+license.workspace = true
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+keywords.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+ic-agent = ["dep:ic-agent"]
+pocket-ic = ["dep:pocket-ic"]
+
+[dependencies]
+async-trait = { workspace = true }
+candid = { workspace = true }
+ic-agent = { workspace = true, optional = true }
+ic-cdk = { workspace = true }
+pocket-ic = { workspace = true, optional = true }
+serde = { workspace = true }
+thiserror = { workspace = true }

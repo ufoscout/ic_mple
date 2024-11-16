@@ -14,8 +14,10 @@ keywords = ["IC", "PocketIC", "Dfinity"]
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 
 [workspace.dependencies]
+async-trait = "0.1"
 candid = { version = "0.10" }
 flate2 = "1"
+ic-agent = "0.39"
 ic-cdk = "0.17"
 log = "0.4"
 pocket-ic = "6"

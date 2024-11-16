@@ -5,8 +5,7 @@ use std::sync::OnceLock;
 use std::time::Duration;
 use std::{env, fs};
 
-use ::pocket_ic::{nonblocking::PocketIc, PocketIcBuilder, WasmResult};
-use candid::{CandidType, Decode, Deserialize, Encode, Principal};
+use ::pocket_ic::PocketIcBuilder;
 use flate2::read::GzDecoder;
 use log::*;
 
@@ -137,54 +136,6 @@ fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
     }
 
     binary_file_path
-}
-
-/// Query a canister method and return the result.
-pub async fn query_call<T: CandidType, Result>(
-    pocket_ic: &PocketIc,
-    sender: Principal,
-    canister_id: Principal,
-    method: &str,
-    payload: &T,
-) -> Result
-where
-    for<'a> Result: CandidType + Deserialize<'a>,
-{
-    let payload = Encode!(payload).expect("failed to encode item to candid");
-    let res = match pocket_ic
-        .query_call(canister_id, sender, method, payload)
-        .await
-        .unwrap()
-    {
-        WasmResult::Reply(bytes) => bytes,
-        WasmResult::Reject(e) => panic!("Unexpected reject: {:?}", e),
-    };
-
-    Decode!(&res, Result).expect("failed to decode item from candid")
-}
-
-/// Call an update canister method and return the candid result.
-pub async fn update_call<T: CandidType, Result>(
-    pocket_ic: &PocketIc,
-    sender: Principal,
-    canister_id: Principal,
-    method: &str,
-    payload: &T,
-) -> Result
-where
-    for<'a> Result: CandidType + Deserialize<'a>,
-{
-    let payload = Encode!(payload).expect("failed to encode item to candid");
-    let res = match pocket_ic
-        .update_call(canister_id, sender, method, payload)
-        .await
-        .unwrap()
-    {
-        WasmResult::Reply(bytes) => bytes,
-        WasmResult::Reject(e) => panic!("Unexpected reject: {:?}", e),
-    };
-
-    Decode!(&res, Result).expect("failed to decode item from candid")
 }
 
 /// Load wasm bytes from a file.

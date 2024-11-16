@@ -4,7 +4,8 @@ set -x
 export RUST_BACKTRACE=full
 
 declare -a publish_list=(
-    "src/ic_mple_pocket_ic"
+    "src/ic_mple_pocket_ic",
+    "src/ic_mple_client",
 )
 
 for i in "${publish_list[@]}"
