@@ -17,4 +17,3 @@ pub use ic_agent;
 pub use ic_client::IcCanisterClient;
 #[cfg(feature = "pocket-ic")]
 pub use pocket_ic::PocketIcClient;
-
