@@ -15,20 +15,13 @@ pub enum CanisterClientError {
 
     #[cfg(feature = "pocket-ic")]
     #[error("pocket-ic test error: {0:?}")]
-    PocketIcTestError(::pocket_ic::CallError),
+    PocketIcTestError(::pocket_ic::RejectResponse),
 }
 
 #[cfg(feature = "pocket-ic")]
-impl From<::pocket_ic::CallError> for CanisterClientError {
-    fn from(error: ::pocket_ic::CallError) -> Self {
+impl From<::pocket_ic::RejectResponse> for CanisterClientError {
+    fn from(error: ::pocket_ic::RejectResponse) -> Self {
         CanisterClientError::PocketIcTestError(error)
-    }
-}
-
-#[cfg(feature = "pocket-ic")]
-impl From<::pocket_ic::UserError> for CanisterClientError {
-    fn from(error: ::pocket_ic::UserError) -> Self {
-        CanisterClientError::PocketIcTestError(::pocket_ic::CallError::UserError(error))
     }
 }
 
