@@ -58,7 +58,12 @@ pub fn get_pocket_ic_client() -> PocketIcBuilder {
         panic!("pocket-ic is not initialized");
     }
 
+    // We create a PocketIC instance consisting of the NNS and one application subnet.
+    // With no II subnet, there's no subnet with ECDSA keys.
     PocketIcBuilder::new()
+        .with_nns_subnet()
+        .with_ii_subnet()
+        .with_application_subnet()
 }
 
 fn default_pocket_ic_server_dir() -> PathBuf {
