@@ -4,10 +4,10 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use candid::utils::ArgumentEncoder;
-use candid::{encode_args, CandidType, Decode, Principal};
+use candid::{CandidType, Decode, Principal, encode_args};
 use ic_agent::identity::PemError;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use thiserror::Error;
 
 use crate::client::CanisterClient;

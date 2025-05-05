@@ -51,7 +51,7 @@ pub fn get_pocket_ic_client() -> PocketIcBuilder {
         target_dir.pop();
 
         let binary_path = download_binary(target_dir);
-        
+
         unsafe {
             env::set_var("POCKET_IC_BIN", binary_path);
         }
@@ -100,7 +100,9 @@ fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
         _ => panic!("pocket-ic requires linux or macos"),
     };
 
-    let download_url = format!("https://github.com/dfinity/pocketic/releases/download/{POCKET_IC_SERVER_VERSION}/pocket-ic-x86_64-{platform}.gz");
+    let download_url = format!(
+        "https://github.com/dfinity/pocketic/releases/download/{POCKET_IC_SERVER_VERSION}/pocket-ic-x86_64-{platform}.gz"
+    );
 
     // Download file
     let gz_binary = {

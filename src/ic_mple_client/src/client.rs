@@ -1,7 +1,7 @@
 use std::future::Future;
 
-use candid::utils::ArgumentEncoder;
 use candid::CandidType;
+use candid::utils::ArgumentEncoder;
 use serde::de::DeserializeOwned;
 
 use crate::CanisterClientResult;
@@ -22,7 +22,11 @@ pub trait CanisterClient: Send + Clone {
     /// # Returns
     ///
     /// The result of the method call.
-    fn update<T, R>(&self, method: &str, args: T) -> impl Future<Output = CanisterClientResult<R>> + Send
+    fn update<T, R>(
+        &self,
+        method: &str,
+        args: T,
+    ) -> impl Future<Output = CanisterClientResult<R>> + Send
     where
         T: ArgumentEncoder + Send + Sync,
         R: DeserializeOwned + CandidType + Send;
@@ -37,7 +41,11 @@ pub trait CanisterClient: Send + Clone {
     /// # Returns
     ///
     /// The result of the method call.
-    fn query<T, R>(&self, method: &str, args: T) -> impl Future<Output = CanisterClientResult<R>> + Send
+    fn query<T, R>(
+        &self,
+        method: &str,
+        args: T,
+    ) -> impl Future<Output = CanisterClientResult<R>> + Send
     where
         T: ArgumentEncoder + Send + Sync,
         R: DeserializeOwned + CandidType + Send;

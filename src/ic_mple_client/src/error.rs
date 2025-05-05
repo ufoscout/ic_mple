@@ -28,4 +28,3 @@ pub type CanisterClientResult<T> = Result<T, CanisterClientError>;
 
 /// This tuple is returned incase of IC errors such as Network, canister error.
 pub type IcError = ic_cdk::call::Error;
-
