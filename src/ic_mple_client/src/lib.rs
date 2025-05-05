@@ -11,7 +11,7 @@ pub mod pocket_ic;
 #[cfg(feature = "ic-agent")]
 pub use agent::{AgentError, IcAgentClient};
 pub use client::CanisterClient;
-pub use error::{CanisterClientError, CanisterClientResult, IcError, IcResult};
+pub use error::{CanisterClientError, CanisterClientResult, IcError};
 #[cfg(feature = "ic-agent")]
 pub use ic_agent;
 pub use ic_client::IcCanisterClient;

@@ -18,9 +18,9 @@ async-trait = "0.1"
 candid = { version = "0.10" }
 flate2 = "1"
 ic-agent = "0.40"
-ic-cdk = "0.17"
+ic-cdk = "0.18"
 log = "0.4"
-pocket-ic = "7"
+pocket-ic = "9"
 reqwest = { version = "0.12", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2"
