@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
     "src/*",
 ]
@@ -7,7 +7,7 @@ members = [
 [workspace.package]
 edition = "2024"
 license = "MIT"
-version = "0.4.1"
+version = "0.5.0"
 homepage = "https://github.com/ufoscout/ic_mple"
 repository = "https://github.com/ufoscout/ic_mple"
 keywords = ["IC", "PocketIC", "Dfinity"]
