@@ -57,12 +57,11 @@ impl IcAgentClient {
     }
 }
 
-#[async_trait::async_trait]
 impl CanisterClient for IcAgentClient {
     async fn query<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
-        R: DeserializeOwned + CandidType,
+        R: DeserializeOwned + CandidType + Send,
     {
         let args = encode_args(args)?;
 
@@ -78,7 +77,7 @@ impl CanisterClient for IcAgentClient {
     async fn update<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
-        R: DeserializeOwned + CandidType,
+        R: DeserializeOwned + CandidType + Send,
     {
         let args = encode_args(args)?;
         self.agent

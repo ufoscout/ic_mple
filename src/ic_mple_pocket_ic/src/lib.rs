@@ -37,7 +37,9 @@ pub fn get_pocket_ic_client() -> PocketIcBuilder {
 
         if let Some(binary_path) = dbg!(check_default_pocket_ic_binary_exist()) {
             // Default server binary found. Let's use it.
-            env::set_var("POCKET_IC_BIN", binary_path);
+            unsafe {
+                env::set_var("POCKET_IC_BIN", binary_path);
+            }
             return true;
         }
 
@@ -49,7 +51,10 @@ pub fn get_pocket_ic_client() -> PocketIcBuilder {
         target_dir.pop();
 
         let binary_path = download_binary(target_dir);
-        env::set_var("POCKET_IC_BIN", binary_path);
+        
+        unsafe {
+            env::set_var("POCKET_IC_BIN", binary_path);
+        }
 
         true
     });

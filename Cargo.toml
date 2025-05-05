@@ -5,7 +5,7 @@ members = [
 ]
 
 [workspace.package]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 version = "0.4.1"
 homepage = "https://github.com/ufoscout/ic_mple"
@@ -14,7 +14,6 @@ keywords = ["IC", "PocketIC", "Dfinity"]
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 
 [workspace.dependencies]
-async-trait = "0.1"
 candid = { version = "0.10" }
 flate2 = "1"
 ic-agent = "0.40"
