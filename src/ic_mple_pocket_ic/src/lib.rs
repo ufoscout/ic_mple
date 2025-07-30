@@ -29,35 +29,37 @@ const POCKET_IC_SERVER_VERSION: &str = "9.0.3";
 pub async fn get_pocket_ic_client() -> PocketIcBuilder {
     static INITIALIZATION_STATUS: OnceCell<bool> = OnceCell::const_new();
 
-    let status: &bool = INITIALIZATION_STATUS.get_or_init(|| async {
-        if check_custom_pocket_ic_initialized() {
-            // Custom server binary found. Let's use it.
-            return true;
-        };
+    let status: &bool = INITIALIZATION_STATUS
+        .get_or_init(|| async {
+            if check_custom_pocket_ic_initialized() {
+                // Custom server binary found. Let's use it.
+                return true;
+            };
 
-        if let Some(binary_path) = dbg!(check_default_pocket_ic_binary_exist()) {
-            // Default server binary found. Let's use it.
+            if let Some(binary_path) = dbg!(check_default_pocket_ic_binary_exist()) {
+                // Default server binary found. Let's use it.
+                unsafe {
+                    env::set_var("POCKET_IC_BIN", binary_path);
+                }
+                return true;
+            }
+
+            // Server binary not found. Let's download it.
+            let mut target_dir = env::var("POCKET_IC_BIN")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| default_pocket_ic_server_binary_path());
+
+            target_dir.pop();
+
+            let binary_path = download_binary(target_dir).await;
+
             unsafe {
                 env::set_var("POCKET_IC_BIN", binary_path);
             }
-            return true;
-        }
 
-        // Server binary not found. Let's download it.
-        let mut target_dir = env::var("POCKET_IC_BIN")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| default_pocket_ic_server_binary_path());
-
-        target_dir.pop();
-
-        let binary_path = download_binary(target_dir).await;
-
-        unsafe {
-            env::set_var("POCKET_IC_BIN", binary_path);
-        }
-
-        true
-    }).await;
+            true
+        })
+        .await;
 
     if !*status {
         panic!("pocket-ic is not initialized");
@@ -113,11 +115,13 @@ async fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
             .build()
             .unwrap()
             .get(download_url)
-            .send().await
+            .send()
+            .await
             .unwrap();
 
         response
-            .bytes().await
+            .bytes()
+            .await
             .expect("pocket-ic server binary should be downloaded correctly")
     };
 

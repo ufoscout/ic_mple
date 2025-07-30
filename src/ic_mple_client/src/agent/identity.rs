@@ -74,8 +74,7 @@ pub async fn init_agent(
         .build()
         .map_err(|e| {
             AgentError::ConfigurationError(format!(
-                "error configuring transport client. Err: {:?}",
-                e
+                "error configuring transport client. Err: {e:?}"
             ))
         })?;
 
