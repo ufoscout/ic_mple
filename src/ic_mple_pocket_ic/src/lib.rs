@@ -1,13 +1,13 @@
 use std::fs::File;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 use std::time::Duration;
 use std::{env, fs};
 
 use ::pocket_ic::PocketIcBuilder;
 use flate2::read::GzDecoder;
 use log::*;
+use tokio::sync::OnceCell;
 
 pub mod pocket_ic {
     pub use pocket_ic::*;
@@ -26,10 +26,10 @@ const POCKET_IC_SERVER_VERSION: &str = "9.0.3";
 /// point to the binary. Also, the binary should be executable.
 ///
 /// It supports only linux and macos.
-pub fn get_pocket_ic_client() -> PocketIcBuilder {
-    static INITIALIZATION_STATUS: OnceLock<bool> = OnceLock::new();
+pub async fn get_pocket_ic_client() -> PocketIcBuilder {
+    static INITIALIZATION_STATUS: OnceCell<bool> = OnceCell::const_new();
 
-    let status: &bool = INITIALIZATION_STATUS.get_or_init(|| {
+    let status: &bool = INITIALIZATION_STATUS.get_or_init(|| async {
         if check_custom_pocket_ic_initialized() {
             // Custom server binary found. Let's use it.
             return true;
@@ -50,14 +50,14 @@ pub fn get_pocket_ic_client() -> PocketIcBuilder {
 
         target_dir.pop();
 
-        let binary_path = download_binary(target_dir);
+        let binary_path = download_binary(target_dir).await;
 
         unsafe {
             env::set_var("POCKET_IC_BIN", binary_path);
         }
 
         true
-    });
+    }).await;
 
     if !*status {
         panic!("pocket-ic is not initialized");
@@ -93,7 +93,7 @@ fn check_default_pocket_ic_binary_exist() -> Option<PathBuf> {
     path.exists().then_some(path)
 }
 
-fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
+async fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
     let platform = match env::consts::OS {
         "linux" => "linux",
         "macos" => "darwin",
@@ -108,16 +108,16 @@ fn download_binary(pocket_ic_dir: PathBuf) -> PathBuf {
     let gz_binary = {
         info!("downloading pocket-ic server binary from: {download_url}");
 
-        let response = reqwest::blocking::Client::builder()
+        let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(120))
             .build()
             .unwrap()
             .get(download_url)
-            .send()
+            .send().await
             .unwrap();
 
         response
-            .bytes()
+            .bytes().await
             .expect("pocket-ic server binary should be downloaded correctly")
     };
 
@@ -162,7 +162,7 @@ pub fn load_wasm_bytes(wasm_path: &str) -> Vec<u8> {
     buffer
 }
 
-#[test]
-fn should_initialize_pocket_ic() {
-    get_pocket_ic_client();
+#[tokio::test]
+async fn should_initialize_pocket_ic() {
+    get_pocket_ic_client().await;
 }
