@@ -46,7 +46,7 @@ pub struct Logger {
 /// ```
 /// # #[macro_use] extern crate log;
 /// # use std::io::Write;
-/// use ic_log::Builder;
+/// use ic_mple_log::Builder;
 /// use log::LevelFilter;
 ///
 /// let mut builder = Builder::new();
@@ -80,7 +80,7 @@ impl Builder {
     ///
     /// ```
     /// use log::LevelFilter;
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     ///
     /// let mut builder = Builder::new();
     ///
@@ -103,7 +103,7 @@ impl Builder {
     /// The format function is expected to output the string directly to the
     /// `Formatter` so that implementations can use the [`std::fmt`] macros
     /// to format and output without intermediate heap allocations. The default
-    /// `ic_log` formatter takes advantage of this.
+    /// `ic_mple_log` formatter takes advantage of this.
     ///
     /// # Examples
     ///
@@ -111,7 +111,7 @@ impl Builder {
     ///
     /// ```
     /// use std::io::Write;
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     ///
     /// let mut builder = Builder::new();
     ///
@@ -175,7 +175,7 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -194,7 +194,7 @@ impl Builder {
     /// Only include messages for info and above for logs globally:
     ///
     /// ```
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -216,7 +216,7 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();

@@ -15,7 +15,7 @@
 //! ```
 //! use std::io::Write;
 //!
-//! let mut builder = ic_log::Builder::new();
+//! let mut builder = ic_mple_log::Builder::new();
 //!
 //! builder.format(|buf, record| {
 //!     writeln!(buf, "{}: {}",
@@ -79,7 +79,7 @@ impl Default for TimestampPrecision {
 /// ```
 /// use std::io::Write;
 ///
-/// let mut builder = ic_log::Builder::new();
+/// let mut builder = ic_mple_log::Builder::new();
 ///
 /// builder.format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()));
 /// ```
