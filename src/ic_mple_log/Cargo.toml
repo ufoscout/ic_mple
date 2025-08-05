@@ -8,7 +8,7 @@ repository.workspace = true
 authors.workspace = true
 
 description = """A logging implementation for `log` in IC"""
-keywords = ["IC", "PocketIC", "internet computer"]
+keywords = ["IC", "PocketIC", "internet-computer"]
 
 [dependencies]
 arc-swap = { workspace = true }
