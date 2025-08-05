@@ -121,9 +121,9 @@ impl Builder {
     /// [`Formatter`]: fmt/struct.Formatter.html
     /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
     /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
-    pub fn format<F: 'static>(&mut self, format: F) -> &mut Self
+    pub fn format<F>(&mut self, format: F) -> &mut Self
     where
-        F: Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send,
+        F: 'static + Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send,
     {
         self.format.custom_format = Some(Box::new(format));
         self
@@ -334,7 +334,7 @@ impl Log for Logger {
             // formatter and its buffer are discarded and recreated.
 
             thread_local! {
-                static FORMATTER: RefCell<Option<Formatter>> = RefCell::new(None);
+                static FORMATTER: RefCell<Option<Formatter>> = const { RefCell::new(None) };
             }
 
             let print = |formatter: &mut Formatter, record: &Record| {

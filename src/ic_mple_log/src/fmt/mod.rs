@@ -217,7 +217,7 @@ impl<'a> DefaultFormat<'a> {
     }
 
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
-        { text }
+        text
     }
 
     fn write_header_value<T>(&mut self, value: T) -> io::Result<()>
@@ -228,9 +228,9 @@ impl<'a> DefaultFormat<'a> {
             self.written_header_value = true;
 
             let open_brace = self.subtle_style("[");
-            write!(self.buf, "{}{}", open_brace, value)
+            write!(self.buf, "{open_brace}{value}")
         } else {
-            write!(self.buf, " {}", value)
+            write!(self.buf, " {value}")
         }
     }
 
@@ -239,9 +239,9 @@ impl<'a> DefaultFormat<'a> {
             return Ok(());
         }
 
-        let level = { { record.level() } };
+        let level = { record.level() };
 
-        self.write_header_value(format_args!("{:<5}", level))
+        self.write_header_value(format_args!("{level:<5}"))
     }
 
     fn write_timestamp(&mut self) -> io::Result<()> {
@@ -277,7 +277,7 @@ impl<'a> DefaultFormat<'a> {
     fn finish_header(&mut self) -> io::Result<()> {
         if self.written_header_value {
             let close_brace = self.subtle_style("]");
-            write!(self.buf, "{} ", close_brace)
+            write!(self.buf, "{close_brace} ")
         } else {
             Ok(())
         }
