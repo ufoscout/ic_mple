@@ -1,0 +1,25 @@
+[package]
+name = "ic_mple_log"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+description = """A logging implementation for `log` in IC"""
+keywords = ["IC", "PocketIC", "internet computer"]
+
+[dependencies]
+arc-swap = { workspace = true }
+log = { workspace = true, features = ["std"] }
+env_filter = { workspace = true }
+ic-cdk = { workspace = true }
+
+# Enables rfc3339 time format in logs
+# Without this, timestamps will be printed as timestamp in nanoseconds
+humantime = { workspace = true, optional = true }
+
+[features]
+default = ["humantime"]
+humantime = ["dep:humantime"]

@@ -7,15 +7,17 @@ members = [
 [workspace.package]
 edition = "2024"
 license = "MIT"
-version = "0.7.0"
+version = "0.7.1"
 homepage = "https://github.com/ufoscout/ic_mple"
 repository = "https://github.com/ufoscout/ic_mple"
-keywords = ["IC", "PocketIC", "Dfinity"]
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 
 [workspace.dependencies]
+arc-swap = "1.6"
 candid = { version = "0.10" }
+env_filter = "0.1.1"
 flate2 = "1"
+humantime = { version = "2", default-features = false }
 ic-agent = "0.41"
 ic-cdk = "0.18"
 log = "0.4"
@@ -29,3 +31,4 @@ reqwest = { version = "0.12", default-features = false, features = [
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2"
 tokio = { version = "1", default-features = false }
+
