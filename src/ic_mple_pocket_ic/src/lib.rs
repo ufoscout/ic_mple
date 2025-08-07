@@ -15,6 +15,44 @@ pub mod pocket_ic {
 
 const POCKET_IC_SERVER_VERSION: &str = "9.0.3";
 
+/// Returns the pocket-ic client synchronously.
+/// This method assumes that the pocket-ic server binary is already available
+/// and does not perform any download operations.
+///
+/// The method checks for:
+/// 1. Custom server binary via `POCKET_IC_BIN` environment variable
+/// 2. Default server binary in the temp directory
+///
+/// If neither is found, it will panic.
+///
+/// Use this method when you're certain the binary is already present,
+/// such as in CI environments or after calling `get_pocket_ic_client()` once.
+pub fn get_pocket_ic_client_sync() -> PocketIcBuilder {
+    if check_custom_pocket_ic_initialized() {
+        // Custom server binary found. Let's use it.
+    } else if let Some(binary_path) = check_default_pocket_ic_binary_exist() {
+        // Default server binary found. Let's use it.
+        unsafe {
+            env::set_var("POCKET_IC_BIN", binary_path);
+        }
+    } else {
+        panic!(
+            "PocketIC server binary not found. Please ensure the binary is available at:\n\
+             - Custom path: Set POCKET_IC_BIN environment variable\n\
+             - Default path: {}\n\
+             Consider calling get_pocket_ic_client() first to download the binary.",
+            default_pocket_ic_server_binary_path().display()
+        );
+    }
+
+    // We create a PocketIC instance consisting of the NNS and one application subnet.
+    // With no II subnet, there's no subnet with ECDSA keys.
+    PocketIcBuilder::new()
+        .with_nns_subnet()
+        .with_ii_subnet()
+        .with_application_subnet()
+}
+
 /// Returns the pocket-ic client.
 /// If pocket-ic server binary is not present, it downloads it and sets
 /// the `POCKET_IC_BIN` environment variable accordingly.
@@ -169,4 +207,15 @@ pub fn load_wasm_bytes(wasm_path: &str) -> Vec<u8> {
 #[tokio::test]
 async fn should_initialize_pocket_ic() {
     get_pocket_ic_client().await;
+}
+
+#[test]
+fn should_initialize_pocket_ic_sync_after_download() {
+    // This test assumes the binary was already downloaded by the async test
+    // In practice, you'd call get_pocket_ic_client() first in your setup
+
+    // Skip this test if the binary doesn't exist to avoid panics in CI
+    if check_custom_pocket_ic_initialized() || check_default_pocket_ic_binary_exist().is_some() {
+        get_pocket_ic_client_sync();
+    }
 }
