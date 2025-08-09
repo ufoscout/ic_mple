@@ -7,7 +7,7 @@ members = [
 [workspace.package]
 edition = "2024"
 license = "MIT"
-version = "0.7.1"
+version = "0.8.0"
 homepage = "https://github.com/ufoscout/ic_mple"
 repository = "https://github.com/ufoscout/ic_mple"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
@@ -18,7 +18,7 @@ candid = { version = "0.10" }
 env_filter = "0.1.1"
 flate2 = "1"
 humantime = { version = "2", default-features = false }
-ic-agent = "0.41"
+ic-agent = "0.42"
 ic-cdk = "0.18"
 log = "0.4"
 pocket-ic = "9.0.2"
