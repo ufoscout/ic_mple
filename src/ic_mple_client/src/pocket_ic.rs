@@ -104,7 +104,6 @@ impl PocketIcClient {
 }
 
 impl CanisterClient for PocketIcClient {
-
     async fn update<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
@@ -120,5 +119,4 @@ impl CanisterClient for PocketIcClient {
     {
         PocketIcClient::query_call(self, method, args).await
     }
-    
 }
