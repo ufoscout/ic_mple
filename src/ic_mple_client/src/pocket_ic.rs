@@ -77,6 +77,7 @@ impl PocketIcClient {
         Ok(decoded)
     }
 
+    /// Submit an update call (without executing it immediately).
     pub async fn submit_call<T>(&self, method: &str, args: T) -> CanisterClientResult<RawMessageId>
     where
         T: ArgumentEncoder + Send + Sync,
@@ -91,6 +92,7 @@ impl PocketIcClient {
         Ok(msg_id)
     }
 
+    /// Await an update call submitted previously by `submit_call`.
     pub async fn await_call<R>(&self, msg_id: RawMessageId) -> CanisterClientResult<R>
     where
         R: DeserializeOwned + CandidType,
