@@ -43,8 +43,8 @@ impl PocketIcClient {
             .expect("PocketIC client is not available")
     }
 
-    /// Performs update call with the given arguments.
-    pub async fn update<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
+    /// Performs an update call with the given arguments.
+    pub async fn update_call<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
         R: DeserializeOwned + CandidType,
@@ -60,8 +60,8 @@ impl PocketIcClient {
         Ok(decoded)
     }
 
-    /// Performs query call with the given arguments.
-    pub async fn query<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
+    /// Performs a query call with the given arguments.
+    pub async fn query_call<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
         R: DeserializeOwned + CandidType,
@@ -104,12 +104,13 @@ impl PocketIcClient {
 }
 
 impl CanisterClient for PocketIcClient {
+
     async fn update<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
         R: DeserializeOwned + CandidType + Send,
     {
-        PocketIcClient::update(self, method, args).await
+        PocketIcClient::update_call(self, method, args).await
     }
 
     async fn query<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
@@ -117,6 +118,7 @@ impl CanisterClient for PocketIcClient {
         T: ArgumentEncoder + Send + Sync,
         R: DeserializeOwned + CandidType + Send,
     {
-        PocketIcClient::query(self, method, args).await
+        PocketIcClient::query_call(self, method, args).await
     }
+    
 }
