@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use candid::utils::ArgumentEncoder;
 use candid::{CandidType, Decode, Principal};
+use pocket_ic::common::rest::RawMessageId;
 use pocket_ic::nonblocking::*;
 use serde::de::DeserializeOwned;
 
@@ -72,6 +73,31 @@ impl PocketIcClient {
             .query_call(self.canister, self.caller, method, args)
             .await?;
 
+        let decoded = Decode!(&call_result, R)?;
+        Ok(decoded)
+    }
+
+    /// Submit an update call (without executing it immediately).
+    pub async fn submit_call<T>(&self, method: &str, args: T) -> CanisterClientResult<RawMessageId>
+    where
+        T: ArgumentEncoder + Send + Sync,
+    {
+        let args = candid::encode_args(args)?;
+
+        let msg_id = self
+            .client()
+            .submit_call(self.canister, self.caller, method, args)
+            .await?;
+
+        Ok(msg_id)
+    }
+
+    /// Await an update call submitted previously by `submit_call`.
+    pub async fn await_call<R>(&self, msg_id: RawMessageId) -> CanisterClientResult<R>
+    where
+        R: DeserializeOwned + CandidType,
+    {
+        let call_result = self.client().await_call(msg_id).await?;
         let decoded = Decode!(&call_result, R)?;
         Ok(decoded)
     }
