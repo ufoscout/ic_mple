@@ -74,15 +74,17 @@ impl From<LogServiceSettings> for LogSettings {
     }
 }
 
+pub type LoggerServiceStorage = StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>;
+
 /// Handles the runtime logger configuration
 pub struct LoggerConfigService<
-    S: Storage<StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>>,
+    S: Storage<LoggerServiceStorage>,
 > {
     pub logger_config: Option<LoggerConfigHandle>,
     pub log_settings_store: S,
 }
 
-impl<S: Storage<StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>>> LoggerConfigService<S> {
+impl<S: Storage<LoggerServiceStorage>> LoggerConfigService<S> {
     /// Instantiates a new LoggerConfigService
     pub fn new(log_settings_store: S) -> Self {
         Self {
@@ -147,7 +149,7 @@ mod test {
     use super::*;
 
     thread_local! {
-        static LOG_SETTINGS_STORE: RefCell<StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>> = RefCell::new(
+        static LOG_SETTINGS_STORE: RefCell<LoggerServiceStorage> = RefCell::new(
             StableCell::new(MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1)), LogSettings::default())
         );
     }
