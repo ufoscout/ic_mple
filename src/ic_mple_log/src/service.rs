@@ -115,7 +115,7 @@ where
         }
 
         self.logger_config = Some(
-            init_log(&self.log_settings.get())?);
+            init_log(self.log_settings.get())?);
 
         Ok(())
     }
