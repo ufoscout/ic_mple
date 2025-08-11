@@ -15,8 +15,8 @@
 //! ```
 //! use std::io::Write;
 //!
-//! let mut builder = ic_log::Builder::new()
-//!     .parse_filters("debug,crate1::mod1=error,crate1::mod2,crate2=debug");
+//! let mut builder = ic_mple_log::Builder::new()
+//!     .try_parse_filters("debug,crate1::mod1=error,crate1::mod2,crate2=debug").unwrap();
 //!
 //! builder.build();
 //! ```
@@ -163,7 +163,7 @@ impl DefaultFormat<'_> {
     }
 
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
-        { text }
+        text
     }
 
     fn write_header_value<T>(&mut self, value: T) -> io::Result<()>
@@ -185,7 +185,7 @@ impl DefaultFormat<'_> {
             return Ok(());
         }
 
-        let level = { { record.level() } };
+        let level = record.level();
 
         self.write_header_value(format_args!("{:<5}", level))
     }

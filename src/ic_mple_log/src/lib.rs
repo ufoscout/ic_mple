@@ -62,13 +62,13 @@ pub struct Logger {
 /// ```
 /// # #[macro_use] extern crate log;
 /// # use std::io::Write;
-/// use ic_log::Builder;
+/// use ic_mple_log::Builder;
 /// use log::LevelFilter;
 ///
 /// let mut builder = Builder::new();
 ///
 /// builder
-///     .parse_filters("debug,crate1::mod1=error,crate1::mod2,crate2=debug")
+///     .try_parse_filters("debug,crate1::mod1=error,crate1::mod2,crate2=debug").unwrap()
 ///     .try_init();
 ///
 /// error!("error message");
@@ -125,7 +125,7 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -144,7 +144,7 @@ impl Builder {
     /// Only include messages for info and above for logs globally:
     ///
     /// ```
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
@@ -166,7 +166,7 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use ic_log::Builder;
+    /// use ic_mple_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
