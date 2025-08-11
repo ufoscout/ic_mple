@@ -10,7 +10,7 @@ pub fn current_system_time() -> SystemTime {
 
     #[cfg(target_family = "wasm")]
     {
-        let timestamp_in_nanos = ic_exports::ic_cdk::api::time();
+        let timestamp_in_nanos = ic_cdk::api::time();
         std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_nanos(timestamp_in_nanos)
     }
 }
@@ -25,6 +25,6 @@ pub fn print(data: &[u8]) {
 
     #[cfg(target_family = "wasm")]
     {
-        ic_exports::ic_cdk::api::debug_print(String::from_utf8_lossy(data))
+        ic_cdk::api::debug_print(String::from_utf8_lossy(data))
     }
 }

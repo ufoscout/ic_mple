@@ -11,3 +11,4 @@ clean:
 build:
   cargo build 
   cargo build --all-features
+
