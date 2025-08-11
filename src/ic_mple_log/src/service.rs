@@ -3,8 +3,9 @@ use std::borrow::Cow;
 use crate::types::LogError;
 use crate::{LogSettings, LoggerConfigHandle, init_log};
 use candid::{CandidType, Decode, Encode};
-use ic_stable_structures::Memory;
-use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
+use ic_mple_utils::store::Storage;
+use ic_stable_structures::DefaultMemoryImpl;
+use ic_stable_structures::memory_manager::VirtualMemory;
 use ic_stable_structures::storable::Bound;
 use ic_stable_structures::{StableCell, Storable};
 use serde::Deserialize;
@@ -74,34 +75,21 @@ impl From<LogServiceSettings> for LogSettings {
 }
 
 /// Handles the runtime logger configuration
-pub struct LoggerConfigService<M: Memory> {
+pub struct LoggerConfigService<S: Storage<StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>>> {
     pub logger_config: Option<LoggerConfigHandle>,
-    pub log_settings: StableCell<LogSettings, VirtualMemory<M>>,
+    pub log_settings_store: S,
 }
 
-impl<M> LoggerConfigService<M>
-where
-    M: Memory,
+impl<S: Storage<StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>>> LoggerConfigService<S> 
 {
     /// Instantiates a new LoggerConfigService
     pub fn new(
-        memory_manager: &MemoryManager<M>,
-        logger_service_memory_id: MemoryId,
-    ) -> Result<Self, LogError> {
-        let service = Self {
+        log_settings_store: S,
+    ) -> Self {
+        Self {
             logger_config: None,
-            log_settings: StableCell::new(
-                memory_manager.get(logger_service_memory_id),
-                LogSettings {
-                    enable_console: false,
-                    in_memory_records: DEFAULT_IN_MEMORY_RECORDS,
-                    max_record_length: DEFAULT_MAX_RECORD_LENGTH,
-                    log_filter: "warn".to_string(),
-                },
-            ),
-        };
-
-        Ok(service)
+            log_settings_store,
+        }
     }
 
     /// Initialize logger. Must be called just once in the canister init and post_upgrade hook
@@ -111,12 +99,15 @@ where
         }
 
         if let Some(log_settings) = log_settings {
-            self.log_settings.set(log_settings.into());
+            self.log_settings_store.with_borrow_mut(|store| {
+                store.set(log_settings.into());
+            });
         }
 
-        self.logger_config = Some(init_log(self.log_settings.get())?);
-
-        Ok(())
+        self.log_settings_store.with_borrow(|store| {
+            self.logger_config = Some(init_log(store.get())?);
+            Ok(())
+        })
     }
 
     /// Changes the logger filter at runtime
@@ -130,14 +121,48 @@ where
 
     /// Returns the current logger filter
     pub fn get_logger_filter(&self) -> String {
-        self.log_settings.get().log_filter.clone()
+        self.log_settings_store.with_borrow(|store| store.get().log_filter.clone())
     }
 
     fn update_log_settings(&mut self, filter: &str) -> Result<(), LogError> {
-        let mut log_settings = self.log_settings.get().clone();
-        log_settings.log_filter = filter.to_string();
-        self.log_settings.set(log_settings);
+
+        self.log_settings_store.with_borrow_mut(|store| {
+            let mut log_settings = store.get().clone();
+            log_settings.log_filter = filter.to_string();
+            store.set(log_settings);
+        });
 
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod test {
+    use std::cell::RefCell;
+
+    use ic_stable_structures::{memory_manager::{MemoryId, MemoryManager}, DefaultMemoryImpl};
+
+    use super::*;
+
+    thread_local! {
+        static LOG_SETTINGS_STORE: RefCell<StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>> = RefCell::new(
+            StableCell::new(MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1)), LogSettings::default())
+        );
+    }
+
+    #[test]
+    fn test_logger_config_service_with_thread_local() {
+        let logger_config_service = LoggerConfigService::new(&LOG_SETTINGS_STORE);
+        assert!(logger_config_service.logger_config.is_none());
+        assert_eq!(logger_config_service.get_logger_filter(), "warn");
+    }
+
+    #[test]
+    fn test_logger_config_service_with_local_var() {
+        let store = StableCell::new(MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1)), LogSettings::default());
+        let logger_config_service = LoggerConfigService::new(store);
+        assert!(logger_config_service.logger_config.is_none());
+        assert_eq!(logger_config_service.get_logger_filter(), "warn");
+    }
+
 }

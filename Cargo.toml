@@ -1,8 +1,6 @@
 [workspace]
 resolver = "3"
-members = [
-    "src/*",
-]
+members = ["src/*"]
 
 [workspace.package]
 edition = "2024"
@@ -13,6 +11,11 @@ repository = "https://github.com/ufoscout/ic_mple"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 
 [workspace.dependencies]
+ic_mple_client = { path = "src/ic_mple_client", version = "0.8.1" }
+ic_mple_log = { path = "src/ic_mple_log", version = "0.8.1" }
+ic_mple_pocket_ic = { path = "src/ic_mple_pocket_ic", version = "0.8.1" }
+ic_mple_utils = { path = "src/ic_mple_utils", version = "0.8.1" }
+
 arc-swap = "1.6"
 candid = { version = "0.10" }
 env_filter = "0.1.1"
@@ -33,4 +36,3 @@ ringbuffer = "0.16"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2"
 tokio = { version = "1", default-features = false }
-

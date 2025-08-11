@@ -1,0 +1,13 @@
+[package]
+name = "ic_mple_utils"
+description = "Few utils for the ic_mple project"
+
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["IC", "PocketIC", "internet-computer"]
+
+[dependencies]
