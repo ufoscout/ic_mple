@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::types::LogError;
 use crate::{LogSettings, LoggerConfigHandle, init_log};
 use candid::{CandidType, Decode, Encode};
-use ic_mple_utils::store::Storage;
+pub use ic_mple_utils::store::Storage;
 use ic_stable_structures::DefaultMemoryImpl;
 use ic_stable_structures::memory_manager::VirtualMemory;
 use ic_stable_structures::storable::Bound;
