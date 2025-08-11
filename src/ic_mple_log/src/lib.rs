@@ -11,6 +11,8 @@ use writer::{ConsoleWriter, InMemoryWriter, Logs, MultiWriter, Writer};
 pub mod types;
 mod formatter;
 mod platform;
+#[cfg(feature = "service")]
+pub mod service;
 mod settings;
 pub mod writer;
 
@@ -20,9 +22,9 @@ use std::sync::Arc;
 use arc_swap::{ArcSwap, ArcSwapAny};
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 #[allow(deprecated)]
-pub use settings::{LogSettings, LogSettingsV2};
+pub use settings::LogSettings;
 
-use crate::types::LogCanisterError;
+use crate::types::LogError;
 use crate::formatter::Formatter;
 
 /// The logger.
@@ -249,7 +251,7 @@ impl LoggerConfigHandle {
     /// # Errors
     ///
     /// Returns [`LogCanisterError::InvalidConfiguration`] if the filter value is not valid.
-    pub fn update_filters(&self, filters: &str) -> Result<(), LogCanisterError> {
+    pub fn update_filters(&self, filters: &str) -> Result<(), LogError> {
         let new_filter = env_filter::Builder::default().try_parse(filters)?.build();
         let max_level = new_filter.filter();
         self.filter.swap(Arc::new(new_filter));
@@ -352,7 +354,7 @@ mod std_fmt_impls {
 /// # Errors
 ///
 /// Returns [`LogCanisterError::InvalidConfiguration`] if the `log_filter` value is invalid.
-pub fn init_log(settings: &LogSettingsV2) -> Result<LoggerConfigHandle, LogCanisterError> {
+pub fn init_log(settings: &LogSettings) -> Result<LoggerConfigHandle, LogError> {
     let mut builder = Builder::default().try_parse_filters(&settings.log_filter)?;
 
     if settings.enable_console {
@@ -381,7 +383,7 @@ mod tests {
 
     #[test]
     fn update_filter_at_runtime() {
-        let config = init_log(&LogSettingsV2 {
+        let config = init_log(&LogSettings {
             enable_console: true,
             in_memory_records: 0,
             max_record_length: 1024,

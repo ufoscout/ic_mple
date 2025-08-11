@@ -14,7 +14,7 @@ pub struct Pagination {
 
 /// Error returned by the logger canister.
 #[derive(Debug, Clone, CandidType, Deserialize, Eq, PartialEq)]
-pub enum LogCanisterError {
+pub enum LogError {
     /// An initialization was called for the logger, but it is already initialized.
     AlreadyInitialized,
     /// The logger is not initialized.
@@ -29,13 +29,13 @@ pub enum LogCanisterError {
     InvalidConfiguration(String),
 }
 
-impl From<ParseError> for LogCanisterError {
+impl From<ParseError> for LogError {
     fn from(value: ParseError) -> Self {
         Self::InvalidConfiguration(value.to_string())
     }
 }
 
-impl From<SetLoggerError> for LogCanisterError {
+impl From<SetLoggerError> for LogError {
     fn from(_: SetLoggerError) -> Self {
         Self::AlreadyInitialized
     }
