@@ -18,4 +18,3 @@ pub struct LogSettings {
     /// - debug,crate1::mod1=error,crate1::mod2,crate2=debug
     pub log_filter: String,
 }
-

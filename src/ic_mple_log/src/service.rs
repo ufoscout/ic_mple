@@ -1,13 +1,13 @@
 use std::borrow::Cow;
 
-use candid::{CandidType, Decode, Encode};
-use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::storable::Bound;
-use serde::Deserialize;
 use crate::types::LogError;
 use crate::{LogSettings, LoggerConfigHandle, init_log};
+use candid::{CandidType, Decode, Encode};
 use ic_stable_structures::Memory;
+use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
+use ic_stable_structures::storable::Bound;
 use ic_stable_structures::{StableCell, Storable};
+use serde::Deserialize;
 
 impl Storable for LogSettings {
     const BOUND: Bound = Bound::Unbounded;
@@ -19,7 +19,7 @@ impl Storable for LogSettings {
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
         Decode!(&bytes, LogSettings).unwrap()
     }
-    
+
     fn into_bytes(self) -> Vec<u8> {
         Encode!(&self).unwrap()
     }
@@ -31,7 +31,6 @@ const DEFAULT_MAX_RECORD_LENGTH: usize = 1024;
 /// Log settings to initialize the logger
 #[derive(Default, Debug, Clone, CandidType, Deserialize, PartialEq, Eq)]
 pub struct LogServiceSettings {
-
     /// Enable logging to console (`ic::print` when running in IC).
     /// If `None`, default value will be used (`false`).
     pub enable_console: Option<bool>,
@@ -57,7 +56,6 @@ pub struct LogServiceSettings {
     /// - info
     /// - debug,crate1::mod1=error,crate1::mod2,crate2=debug
     pub log_filter: Option<String>,
-
 }
 
 impl From<LogServiceSettings> for LogSettings {
@@ -86,7 +84,10 @@ where
     M: Memory,
 {
     /// Instantiates a new LoggerConfigService
-    pub fn new(memory_manager: &MemoryManager<M>, logger_service_memory_id: MemoryId) -> Result<Self, LogError> {
+    pub fn new(
+        memory_manager: &MemoryManager<M>,
+        logger_service_memory_id: MemoryId,
+    ) -> Result<Self, LogError> {
         let service = Self {
             logger_config: None,
             log_settings: StableCell::new(
@@ -110,12 +111,10 @@ where
         }
 
         if let Some(log_settings) = log_settings {
-            self.log_settings
-                .set(log_settings.into());
+            self.log_settings.set(log_settings.into());
         }
 
-        self.logger_config = Some(
-            init_log(self.log_settings.get())?);
+        self.logger_config = Some(init_log(self.log_settings.get())?);
 
         Ok(())
     }
@@ -124,10 +123,7 @@ where
     pub fn set_logger_filter(&mut self, filter: &str) -> Result<(), LogError> {
         self.update_log_settings(filter)?;
         match self.logger_config.as_mut() {
-            Some(logger_config) => {
-                logger_config
-                    .update_filters(filter)
-            }
+            Some(logger_config) => logger_config.update_filters(filter),
             None => Err(LogError::NotInitialized),
         }
     }
@@ -140,8 +136,7 @@ where
     fn update_log_settings(&mut self, filter: &str) -> Result<(), LogError> {
         let mut log_settings = self.log_settings.get().clone();
         log_settings.log_filter = filter.to_string();
-        self.log_settings
-            .set(log_settings);
+        self.log_settings.set(log_settings);
 
         Ok(())
     }

@@ -8,12 +8,12 @@ use env_filter::{Filter, ParseError};
 use formatter::FormatFn;
 use writer::{ConsoleWriter, InMemoryWriter, Logs, MultiWriter, Writer};
 
-pub mod types;
 mod formatter;
 mod platform;
 #[cfg(feature = "service")]
 pub mod service;
 mod settings;
+pub mod types;
 pub mod writer;
 
 use std::cell::RefCell;
@@ -24,8 +24,8 @@ use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
 #[allow(deprecated)]
 pub use settings::LogSettings;
 
-use crate::types::LogError;
 use crate::formatter::Formatter;
+use crate::types::LogError;
 
 /// The logger.
 ///

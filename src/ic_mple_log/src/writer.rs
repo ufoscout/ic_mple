@@ -206,21 +206,25 @@ pub mod tests {
         writer.print(&"some data".into()).unwrap();
 
         LOG_RECORDS.with(|records| {
-            assert!(records
-                .borrow()
-                .1
-                .iter()
-                .eq(["some data".to_string()].iter()));
+            assert!(
+                records
+                    .borrow()
+                    .1
+                    .iter()
+                    .eq(["some data".to_string()].iter())
+            );
             assert_eq!(records.borrow().0, 1);
         });
 
         writer.print(&"some more data".into()).unwrap();
         LOG_RECORDS.with(|records| {
-            assert!(records.borrow().1.iter().eq([
-                "some data".to_string(),
-                "some more data".to_string()
-            ]
-            .iter()));
+            assert!(
+                records.borrow().1.iter().eq([
+                    "some data".to_string(),
+                    "some more data".to_string()
+                ]
+                .iter())
+            );
             assert_eq!(records.borrow().0, 2);
         });
     }
@@ -792,12 +796,14 @@ pub mod tests {
         }
 
         LOG_RECORDS.with(|records| {
-            assert!(records
-                .borrow()
-                .1
-                .iter()
-                .cloned()
-                .eq((2..(LOG_RECORDS_MAX_COUNT + 2)).map(|i| format!("{i}"))));
+            assert!(
+                records
+                    .borrow()
+                    .1
+                    .iter()
+                    .cloned()
+                    .eq((2..(LOG_RECORDS_MAX_COUNT + 2)).map(|i| format!("{i}")))
+            );
         });
     }
 

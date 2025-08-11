@@ -163,9 +163,7 @@ impl DefaultFormat<'_> {
     }
 
     fn subtle_style(&self, text: &'static str) -> SubtleStyle {
-        {
-            text
-        }
+        { text }
     }
 
     fn write_header_value<T>(&mut self, value: T) -> io::Result<()>
@@ -187,11 +185,7 @@ impl DefaultFormat<'_> {
             return Ok(());
         }
 
-        let level = {
-            {
-                record.level()
-            }
-        };
+        let level = { { record.level() } };
 
         self.write_header_value(format_args!("{:<5}", level))
     }
