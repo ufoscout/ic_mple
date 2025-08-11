@@ -1,47 +1,30 @@
 use std::time::SystemTime;
 
-/// returns the timestamp in nanoseconds
+/// Returns the current SystemTime
 #[inline]
 pub fn current_system_time() -> SystemTime {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(target_family = "wasm"))]
     {
         SystemTime::now()
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_family = "wasm")]
     {
-        let timestamp_in_nanos = ic_cdk::api::time();
+        let timestamp_in_nanos = ic_exports::ic_cdk::api::time();
         std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_nanos(timestamp_in_nanos)
     }
 }
 
-/// returns the timestamp in nanoseconds
-#[inline]
-pub fn current_timestamp_in_nanosecs() -> u64 {
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        std::time::SystemTime::now()
-            .duration_since(std::time::SystemTime::UNIX_EPOCH)
-            .expect("get current timestamp error")
-            .as_nanos() as u64
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    {
-        ic_cdk::api::time()
-    }
-}
-
+/// Prints to the standard out
 #[inline]
 pub fn print(data: &[u8]) {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(target_family = "wasm"))]
     {
         print!("{}", String::from_utf8_lossy(data))
     }
 
-    // ic::time() return the nano_sec, we need to change it to sec.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_family = "wasm")]
     {
-        ic_cdk::print(format!("{}", String::from_utf8_lossy(data)))
+        ic_exports::ic_cdk::api::debug_print(String::from_utf8_lossy(data))
     }
 }

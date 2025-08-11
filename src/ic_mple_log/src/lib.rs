@@ -1,17 +1,31 @@
+//! Implementation of common Rust `log` usable by IC canisters. See the documentation for [`Logger`]
+//! about how to initialize and use `log`.
+//!
+//! This crate also provides a canister trait [`canister::LogCanister`] (use `canister` feature to
+//! enable), which simplifies adding logging configuration to your canister.
+
+use env_filter::{Filter, ParseError};
+use formatter::FormatFn;
+use writer::{ConsoleWriter, InMemoryWriter, Logs, MultiWriter, Writer};
+
+pub mod types;
+mod formatter;
+mod platform;
+mod settings;
+pub mod writer;
+
+use std::cell::RefCell;
 use std::sync::Arc;
-use std::{cell::RefCell, io};
 
 use arc_swap::{ArcSwap, ArcSwapAny};
-use env_filter::{self, Filter};
 use log::{LevelFilter, Log, Metadata, Record, SetLoggerError};
+#[allow(deprecated)]
+pub use settings::{LogSettings, LogSettingsV2};
 
-pub mod fmt;
-pub mod platform;
+use crate::types::LogCanisterError;
+use crate::formatter::Formatter;
 
-use self::fmt::writer::{self, Writer};
-use self::fmt::{FormatFn, Formatter};
-
-/// The env logger.
+/// The logger.
 ///
 /// This struct implements the `Log` trait from the [`log` crate][log-crate-url],
 /// which allows it to act as a logger.
@@ -31,7 +45,7 @@ use self::fmt::{FormatFn, Formatter};
 /// [`Builder::try_init()`]: struct.Builder.html#method.try_init
 /// [`Builder`]: struct.Builder.html
 pub struct Logger {
-    writer: Writer,
+    writer: Box<dyn Writer>,
     filter: Arc<ArcSwapAny<Arc<Filter>>>,
     format: FormatFn,
 }
@@ -46,15 +60,14 @@ pub struct Logger {
 /// ```
 /// # #[macro_use] extern crate log;
 /// # use std::io::Write;
-/// use ic_mple_log::Builder;
+/// use ic_log::Builder;
 /// use log::LevelFilter;
 ///
 /// let mut builder = Builder::new();
 ///
 /// builder
-///     .format(|buf, record| writeln!(buf, "{} - {}", record.level(), record.args()))
-///     .filter(None, LevelFilter::Info)
-///     .init();
+///     .parse_filters("debug,crate1::mod1=error,crate1::mod2,crate2=debug")
+///     .try_init();
 ///
 /// error!("error message");
 /// info!("info message");
@@ -62,108 +75,43 @@ pub struct Logger {
 #[derive(Default)]
 pub struct Builder {
     filter: env_filter::Builder,
-    writer: writer::Builder,
-    format: fmt::Builder,
-    built: bool,
+    writer: MultiWriter,
+    format: formatter::Builder,
 }
 
 impl Builder {
     /// Initializes the log builder with defaults.
-    ///
-    /// **NOTE:** This method won't read from any environment variables.
-    /// Use the [`filter`] and [`write_style`] methods to configure the builder
-    /// or use [`from_env`] or [`from_default_env`] instead.
-    ///
-    /// # Examples
-    ///
-    /// Create a new builder and configure filters and style:
-    ///
-    /// ```
-    /// use log::LevelFilter;
-    /// use ic_mple_log::Builder;
-    ///
-    /// let mut builder = Builder::new();
-    ///
-    /// builder
-    ///     .filter(None, LevelFilter::Info)
-    ///     .init();
-    /// ```
-    ///
-    /// [`filter`]: #method.filter
-    /// [`write_style`]: #method.write_style
     pub fn new() -> Builder {
         Default::default()
     }
 
-    /// Sets the format function for formatting the log output.
-    ///
-    /// This function is called on each record logged and should format the
-    /// log record and output it to the given [`Formatter`].
-    ///
-    /// The format function is expected to output the string directly to the
-    /// `Formatter` so that implementations can use the [`std::fmt`] macros
-    /// to format and output without intermediate heap allocations. The default
-    /// `ic_mple_log` formatter takes advantage of this.
-    ///
-    /// # Examples
-    ///
-    /// Use a custom format to write only the log message:
-    ///
-    /// ```
-    /// use std::io::Write;
-    /// use ic_mple_log::Builder;
-    ///
-    /// let mut builder = Builder::new();
-    ///
-    /// builder.format(|buf, record| writeln!(buf, "{}", record.args()));
-    /// ```
-    ///
-    /// [`Formatter`]: fmt/struct.Formatter.html
-    /// [`String`]: https://doc.rust-lang.org/stable/std/string/struct.String.html
-    /// [`std::fmt`]: https://doc.rust-lang.org/std/fmt/index.html
-    pub fn format<F>(&mut self, format: F) -> &mut Self
-    where
-        F: 'static + Fn(&mut Formatter, &Record) -> io::Result<()> + Sync + Send,
-    {
-        self.format.custom_format = Some(Box::new(format));
-        self
-    }
-
-    /// Use the default format.
-    ///
-    /// This method will clear any custom format set on the builder.
-    pub fn default_format(&mut self) -> &mut Self {
-        self.format = Default::default();
-        self
-    }
-
     /// Whether or not to write the level in the default format.
-    pub fn format_level(&mut self, write: bool) -> &mut Self {
+    pub fn format_level(mut self, write: bool) -> Self {
         self.format.format_level = write;
         self
     }
 
     /// Whether or not to write the module path in the default format.
-    pub fn format_module_path(&mut self, write: bool) -> &mut Self {
+    pub fn format_module_path(mut self, write: bool) -> Self {
         self.format.format_module_path = write;
         self
     }
 
     /// Whether or not to write the target in the default format.
-    pub fn format_target(&mut self, write: bool) -> &mut Self {
+    pub fn format_target(mut self, write: bool) -> Self {
         self.format.format_target = write;
         self
     }
 
     /// Configures the amount of spaces to use to indent multiline log records.
     /// A value of `None` disables any kind of indentation.
-    pub fn format_indent(&mut self, indent: Option<usize>) -> &mut Self {
+    pub fn format_indent(mut self, indent: Option<usize>) -> Self {
         self.format.format_indent = indent;
         self
     }
 
     /// Configures the end of line suffix.
-    pub fn format_suffix(&mut self, suffix: &'static str) -> &mut Self {
+    pub fn format_suffix(mut self, suffix: &'static str) -> Self {
         self.format.format_suffix = suffix;
         self
     }
@@ -175,14 +123,14 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use ic_mple_log::Builder;
+    /// use ic_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
     ///
     /// builder.filter_module("path::to::module", LevelFilter::Info);
     /// ```
-    pub fn filter_module(&mut self, module: &str, level: LevelFilter) -> &mut Self {
+    pub fn filter_module(mut self, module: &str, level: LevelFilter) -> Self {
         self.filter.filter_module(module, level);
         self
     }
@@ -194,14 +142,14 @@ impl Builder {
     /// Only include messages for info and above for logs globally:
     ///
     /// ```
-    /// use ic_mple_log::Builder;
+    /// use ic_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
     ///
     /// builder.filter_level(LevelFilter::Info);
     /// ```
-    pub fn filter_level(&mut self, level: LevelFilter) -> &mut Self {
+    pub fn filter_level(mut self, level: LevelFilter) -> Self {
         self.filter.filter_level(level);
         self
     }
@@ -216,28 +164,35 @@ impl Builder {
     /// Only include messages for info and above for logs in `path::to::module`:
     ///
     /// ```
-    /// use ic_mple_log::Builder;
+    /// use ic_log::Builder;
     /// use log::LevelFilter;
     ///
     /// let mut builder = Builder::new();
     ///
     /// builder.filter(Some("path::to::module"), LevelFilter::Info);
     /// ```
-    pub fn filter(&mut self, module: Option<&str>, level: LevelFilter) -> &mut Self {
+    pub fn filter(mut self, module: Option<&str>, level: LevelFilter) -> Self {
         self.filter.filter(module, level);
         self
     }
 
     /// Parses the directives string in the same form as the `RUST_LOG`
     /// environment variable.
-    ///
-    /// See the module documentation for more details.
-    pub fn parse_filters(&mut self, filters: &str) -> &mut Self {
-        self.filter.parse(filters);
+    /// Example of valid filters:
+    /// - info
+    /// - debug,crate1::mod1=error,crate1::mod2,crate2=debug
+    pub fn try_parse_filters(mut self, filters: &str) -> Result<Self, ParseError> {
+        self.filter.try_parse(filters)?;
+        Ok(self)
+    }
+
+    /// Append a new writer.
+    pub fn add_writer(mut self, writer: Box<dyn Writer>) -> Self {
+        self.writer.add(writer);
         self
     }
 
-    /// Initializes the global logger with the built env logger.
+    /// Initializes the global logger with the built logger.
     ///
     /// This should be called early in the execution of a Rust program. Any log
     /// events that occur before initialization will be ignored.
@@ -246,7 +201,7 @@ impl Builder {
     ///
     /// This function will fail if it is called more than once, or if another
     /// library has already initialized a global logger.
-    pub fn try_init(&mut self) -> Result<LoggerConfig, SetLoggerError> {
+    pub fn try_init(self) -> Result<LoggerConfigHandle, SetLoggerError> {
         let (logger, filter) = self.build();
 
         let max_level = logger.filter();
@@ -255,57 +210,57 @@ impl Builder {
         Ok(filter)
     }
 
-    /// Initializes the global logger with the built env logger.
-    ///
-    /// This should be called early in the execution of a Rust program. Any log
-    /// events that occur before initialization will be ignored.
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if it is called more than once, or if another
-    /// library has already initialized a global logger.
-    pub fn init(&mut self) {
-        self.try_init()
-            .expect("Builder::init should not be called after logger initialized");
-    }
-
-    /// Build an env logger.
+    /// Build a logger.
     ///
     /// The returned logger implements the `Log` trait and can be installed manually
     /// or nested within another logger.
-    pub fn build(&mut self) -> (Logger, LoggerConfig) {
-        assert!(!self.built, "attempt to re-use consumed builder");
-        self.built = true;
-
+    pub fn build(mut self) -> (Logger, LoggerConfigHandle) {
         let filter = Arc::new(ArcSwap::from_pointee(self.filter.build()));
+
+        let writer: Box<dyn Writer> = if self.writer.writers.len() == 1 {
+            self.writer.writers.remove(0)
+        } else {
+            Box::new(self.writer)
+        };
 
         (
             Logger {
-                writer: self.writer.build(),
+                writer,
                 filter: filter.clone(),
                 format: self.format.build(),
             },
-            LoggerConfig { filter },
+            LoggerConfigHandle { filter },
         )
     }
 }
 
-pub struct LoggerConfig {
+/// A handle to the runtime configuration of the logger
+pub struct LoggerConfigHandle {
     filter: Arc<ArcSwapAny<Arc<Filter>>>,
 }
 
-impl LoggerConfig {
-    // Updates the logger filter
-    pub fn update_filters(&self, filters: &str) {
-        let new_filter = env_filter::Builder::default().parse(filters).build();
+impl LoggerConfigHandle {
+    /// Updates the runtime configuration of the logger with a new filter in the same form as the `RUST_LOG`
+    /// environment variable.
+    /// Example of valid filters:
+    /// - info
+    /// - debug,crate1::mod1=error,crate1::mod2,crate2=debug
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LogCanisterError::InvalidConfiguration`] if the filter value is not valid.
+    pub fn update_filters(&self, filters: &str) -> Result<(), LogCanisterError> {
+        let new_filter = env_filter::Builder::default().try_parse(filters)?.build();
         let max_level = new_filter.filter();
         self.filter.swap(Arc::new(new_filter));
         log::set_max_level(max_level);
+
+        Ok(())
     }
 }
 
 impl Logger {
-    /// Returns the maximum `LevelFilter` that this env logger instance is
+    /// Returns the maximum `LevelFilter` that this logger instance is
     /// configured to output.
     pub fn filter(&self) -> LevelFilter {
         self.filter.load().filter()
@@ -334,12 +289,12 @@ impl Log for Logger {
             // formatter and its buffer are discarded and recreated.
 
             thread_local! {
-                static FORMATTER: RefCell<Option<Formatter>> = const { RefCell::new(None) };
+                static FORMATTER: RefCell<Formatter> = RefCell::new(Formatter::default());
             }
 
             let print = |formatter: &mut Formatter, record: &Record| {
-                let _ =
-                    (self.format)(formatter, record).and_then(|_| formatter.print(&self.writer));
+                let _ = (self.format)(formatter, record)
+                    .and_then(|_| formatter.print(self.writer.as_ref()));
 
                 // Always clear the buffer afterwards
                 formatter.clear();
@@ -349,22 +304,10 @@ impl Log for Logger {
                 .try_with(|tl_buf| {
                     match tl_buf.try_borrow_mut() {
                         // There are no active borrows of the buffer
-                        Ok(mut tl_buf) => match *tl_buf {
-                            // We have a previously set formatter
-                            Some(ref mut formatter) => {
-                                print(formatter, record);
-                            }
-                            // We don't have a previously set formatter
-                            None => {
-                                let mut formatter = Formatter::new(&self.writer);
-                                print(&mut formatter, record);
-
-                                *tl_buf = Some(formatter);
-                            }
-                        },
+                        Ok(ref mut formatter) => print(formatter, record),
                         // There's already an active borrow of the buffer (due to re-entrancy)
                         Err(_) => {
-                            print(&mut Formatter::new(&self.writer), record);
+                            print(&mut Formatter::default(), record);
                         }
                     }
                 })
@@ -374,7 +317,7 @@ impl Log for Logger {
                 // The thread-local storage was not available (because its
                 // destructor has already run). Create a new single-use
                 // Formatter on the stack for this call.
-                print(&mut Formatter::new(&self.writer), record);
+                print(&mut Formatter::default(), record);
             }
         }
     }
@@ -383,8 +326,9 @@ impl Log for Logger {
 }
 
 mod std_fmt_impls {
-    use super::*;
     use std::fmt;
+
+    use super::*;
 
     impl fmt::Debug for Logger {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -396,16 +340,36 @@ mod std_fmt_impls {
 
     impl fmt::Debug for Builder {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            if self.built {
-                f.debug_struct("Logger").field("built", &true).finish()
-            } else {
-                f.debug_struct("Logger")
-                    .field("filter", &self.filter)
-                    .field("writer", &self.writer)
-                    .finish()
-            }
+            f.debug_struct("Logger")
+                .field("filter", &self.filter)
+                .finish()
         }
     }
+}
+
+/// Builds and initialize a logger based on the settings
+///
+/// # Errors
+///
+/// Returns [`LogCanisterError::InvalidConfiguration`] if the `log_filter` value is invalid.
+pub fn init_log(settings: &LogSettingsV2) -> Result<LoggerConfigHandle, LogCanisterError> {
+    let mut builder = Builder::default().try_parse_filters(&settings.log_filter)?;
+
+    if settings.enable_console {
+        builder = builder.add_writer(Box::new(ConsoleWriter {}));
+    }
+
+    writer::InMemoryWriter::init_buffer(settings.in_memory_records, settings.max_record_length);
+    builder = builder.add_writer(Box::new(InMemoryWriter {}));
+
+    let config = builder.try_init()?;
+
+    Ok(config)
+}
+
+/// Take the log memory records for the circular buffer.
+pub fn take_memory_records(max_count: usize, from_offset: usize) -> Logs {
+    writer::InMemoryWriter::take_records(max_count, from_offset)
 }
 
 #[cfg(test)]
@@ -417,20 +381,23 @@ mod tests {
 
     #[test]
     fn update_filter_at_runtime() {
-        let config = Builder::default()
-            .filter_level(LevelFilter::Debug)
-            .try_init()
-            .unwrap();
+        let config = init_log(&LogSettingsV2 {
+            enable_console: true,
+            in_memory_records: 0,
+            max_record_length: 1024,
+            log_filter: "debug".to_string(),
+        })
+        .unwrap();
 
         debug!("This one should be printed");
         info!("This one should be printed");
 
-        config.update_filters("error");
+        config.update_filters("error").unwrap();
 
         debug!("This one should NOT be printed");
         info!("This one should NOT be printed");
 
-        config.update_filters("info");
+        config.update_filters("info").unwrap();
 
         debug!("This one should NOT be printed");
         info!("This one should be printed");

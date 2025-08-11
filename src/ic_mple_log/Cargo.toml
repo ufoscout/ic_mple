@@ -12,14 +12,22 @@ keywords = ["IC", "PocketIC", "internet-computer"]
 
 [dependencies]
 arc-swap = { workspace = true }
-log = { workspace = true, features = ["std"] }
+candid = { workspace = true }
 env_filter = { workspace = true }
+log = { workspace = true, features = ["std"] }
 ic-cdk = { workspace = true }
+serde = { workspace = true }
 
 # Enables rfc3339 time format in logs
 # Without this, timestamps will be printed as timestamp in nanoseconds
 humantime = { workspace = true, optional = true }
 
+# Required for the `service` feature
+ic-stable-structures = { workspace = true, optional = true }
+
+ringbuffer = { workspace = true }
+
 [features]
 default = ["humantime"]
 humantime = ["dep:humantime"]
+service = ["ic-stable-structures"]
