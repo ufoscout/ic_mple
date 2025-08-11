@@ -7,7 +7,7 @@ members = [
 [workspace.package]
 edition = "2024"
 license = "MIT"
-version = "0.8.0"
+version = "0.8.1"
 homepage = "https://github.com/ufoscout/ic_mple"
 repository = "https://github.com/ufoscout/ic_mple"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
