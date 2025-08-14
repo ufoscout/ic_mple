@@ -1,4 +1,9 @@
-use std::{cell::RefCell, rc::Rc, sync::{Arc, Mutex, RwLock}, thread::LocalKey};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    sync::{Arc, Mutex, RwLock},
+    thread::LocalKey,
+};
 
 /// An abstract storage interface that allows creating services that can
 /// use both thread-local and owned plain object storage.
@@ -31,8 +36,7 @@ impl<T> Storage<T> for T {
     }
 }
 
-impl <T> Storage<T> for RefCell<T> {
-
+impl<T> Storage<T> for RefCell<T> {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut T) -> R,
@@ -48,8 +52,7 @@ impl <T> Storage<T> for RefCell<T> {
     }
 }
 
-impl <T> Storage<T> for Rc<RefCell<T>> {
-
+impl<T> Storage<T> for Rc<RefCell<T>> {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut T) -> R,
@@ -65,13 +68,12 @@ impl <T> Storage<T> for Rc<RefCell<T>> {
     }
 }
 
-impl <T> Storage<T> for Mutex<T> {
-
+impl<T> Storage<T> for Mutex<T> {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut T) -> R,
     {
-        f(&mut self.get_mut().unwrap())
+        f(self.get_mut().unwrap())
     }
 
     fn with_borrow<F, R>(&self, f: F) -> R
@@ -82,8 +84,7 @@ impl <T> Storage<T> for Mutex<T> {
     }
 }
 
-impl <T> Storage<T> for Arc<Mutex<T>> {
-
+impl<T> Storage<T> for Arc<Mutex<T>> {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut T) -> R,
@@ -99,8 +100,7 @@ impl <T> Storage<T> for Arc<Mutex<T>> {
     }
 }
 
-impl <T> Storage<T> for RwLock<T> {
-
+impl<T> Storage<T> for RwLock<T> {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut T) -> R,
@@ -116,8 +116,7 @@ impl <T> Storage<T> for RwLock<T> {
     }
 }
 
-impl <T> Storage<T> for Arc<RwLock<T>> {
-
+impl<T> Storage<T> for Arc<RwLock<T>> {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut T) -> R,

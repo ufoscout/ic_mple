@@ -77,9 +77,7 @@ impl From<LogServiceSettings> for LogSettings {
 pub type LoggerServiceStorage = StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>;
 
 /// Handles the runtime logger configuration
-pub struct LoggerConfigService<
-    S: Storage<LoggerServiceStorage>,
-> {
+pub struct LoggerConfigService<S: Storage<LoggerServiceStorage>> {
     pub logger_config: Option<LoggerConfigHandle>,
     pub log_settings_store: S,
 }
