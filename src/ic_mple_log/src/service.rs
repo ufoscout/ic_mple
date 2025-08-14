@@ -161,10 +161,10 @@ mod test {
 
     #[test]
     fn test_logger_config_service_with_local_var() {
-        let store = StableCell::new(
+        let store = RefCell::new(StableCell::new(
             MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1)),
             LogSettings::default(),
-        );
+        ));
         let logger_config_service = LoggerConfigService::new(store);
         assert!(logger_config_service.logger_config.is_none());
         assert_eq!(logger_config_service.get_logger_filter(), "warn");
