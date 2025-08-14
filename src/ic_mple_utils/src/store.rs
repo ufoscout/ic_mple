@@ -1,4 +1,4 @@
-use std::{cell::RefCell, thread::LocalKey};
+use std::{cell::RefCell, rc::Rc, sync::{Arc, Mutex}, thread::LocalKey};
 
 /// An abstract storage interface that allows creating services that can
 /// use both thread-local and owned plain object storage.
@@ -15,22 +15,6 @@ pub trait Storage<T> {
         F: FnOnce(&T) -> R;
 }
 
-impl<T: 'static> Storage<T> for &'static LocalKey<RefCell<T>> {
-    fn with_borrow_mut<F, R>(&mut self, f: F) -> R
-    where
-        F: FnOnce(&mut T) -> R,
-    {
-        LocalKey::with_borrow_mut(self, f)
-    }
-
-    fn with_borrow<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&T) -> R,
-    {
-        LocalKey::with_borrow(self, f)
-    }
-}
-
 impl<T> Storage<T> for T {
     fn with_borrow_mut<F, R>(&mut self, f: F) -> R
     where
@@ -44,5 +28,89 @@ impl<T> Storage<T> for T {
         F: FnOnce(&T) -> R,
     {
         f(self)
+    }
+}
+
+impl <T> Storage<T> for RefCell<T> {
+
+    fn with_borrow_mut<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut T) -> R,
+    {
+        f(&mut self.borrow_mut())
+    }
+
+    fn with_borrow<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&T) -> R,
+    {
+        f(&self.borrow())
+    }
+}
+
+impl <T> Storage<T> for Rc<RefCell<T>> {
+
+    fn with_borrow_mut<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut T) -> R,
+    {
+        f(&mut self.borrow_mut())
+    }
+
+    fn with_borrow<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&T) -> R,
+    {
+        f(&self.borrow())
+    }
+}
+
+impl <T> Storage<T> for Mutex<T> {
+
+    fn with_borrow_mut<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut T) -> R,
+    {
+        f(&mut self.lock().unwrap())
+    }
+
+    fn with_borrow<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&T) -> R,
+    {
+        f(&self.lock().unwrap())
+    }
+}
+
+impl <T> Storage<T> for Arc<Mutex<T>> {
+
+    fn with_borrow_mut<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut T) -> R,
+    {
+        f(&mut self.lock().unwrap())
+    }
+
+    fn with_borrow<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&T) -> R,
+    {
+        f(&self.lock().unwrap())
+    }
+}
+
+impl<T: 'static> Storage<T> for &'static LocalKey<RefCell<T>> {
+    fn with_borrow_mut<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut T) -> R,
+    {
+        LocalKey::with_borrow_mut(self, f)
+    }
+
+    fn with_borrow<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&T) -> R,
+    {
+        LocalKey::with_borrow(self, f)
     }
 }
