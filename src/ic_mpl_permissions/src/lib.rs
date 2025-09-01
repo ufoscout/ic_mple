@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::hash::Hash;
 
 use candid::CandidType;
 use candid::Decode;
-use candid::Deserialize;
 use candid::Encode;
 use candid::Principal;
 use ic_mple_utils::store::Storage;
@@ -13,37 +13,28 @@ use ic_stable_structures::DefaultMemoryImpl;
 use ic_stable_structures::BTreeMap;
 use ic_stable_structures::Storable;
 use log::info;
+use serde::de::DeserializeOwned;
 
 use crate::error::PermissionError;
 
 pub mod error;
 
-/// Principal specific permission
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
-)]
-pub enum Permission {
-    /// Gives administrator permissions
-    Admin,
-    /// Allows calling the endpoints to read the logs and get runtime statistics
-    ReadLogs,
-    /// Allows caller to reset the EVM state
-    ResetEvmState,
-    /// Allows calling the endpoints to set the logs configuration
-    UpdateLogsConfiguration,
-    /// Allows calling the endpoints to set validate unsafe blocks
-    ValidateUnsafeBlocks,
-    /// Allows the signature verification canister to send transaction to
-    /// the EVM Canister
-    PrivilegedSendTransaction,
+#[derive(Debug, CandidType, PartialEq, Eq, serde::Serialize, serde::Deserialize, Clone)]
+pub struct PermissionList<T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug>
+{
+    pub permissions: HashSet<T>,
 }
 
-#[derive(Debug, Clone, Default, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
-pub struct PermissionList {
-    pub permissions: HashSet<Permission>,
+impl <T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug> Default for PermissionList<T> {
+    fn default() -> Self {
+        Self { permissions: Default::default() }
+    }
 }
 
-impl Storable for PermissionList {
+
+impl <T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug> Storable for PermissionList<T> 
+where T: DeserializeOwned {
+
     const BOUND: Bound = Bound::Unbounded;
 
     fn to_bytes(&self) -> std::borrow::Cow<'_, [u8]> {
@@ -59,32 +50,33 @@ impl Storable for PermissionList {
     }
 }
 
-pub type PermissionServiceStorage = BTreeMap<Principal, PermissionList, VirtualMemory<DefaultMemoryImpl>>;
+pub type PermissionServiceStorage<T> = BTreeMap<Principal, PermissionList<T>, VirtualMemory<DefaultMemoryImpl>>;
 
 /// A service for managing user permissions
-pub struct PermissionService<S: Storage<PermissionServiceStorage>> {
+pub struct PermissionService<S: Storage<PermissionServiceStorage<T>>, T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug>
+where T: DeserializeOwned
+{
     permission_data: S,
+    phantom: std::marker::PhantomData<T>,
 }
 
-impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
+impl<S: Storage<PermissionServiceStorage<T>>, T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug> PermissionService<S, T>
+where T: DeserializeOwned
+{
 
     /// Instantiates a new PermissionService
     pub fn new(permission_data: S) -> Self {
         Self {
             permission_data,
+            phantom: std::marker::PhantomData,
         }
-    }
-
-    /// Checks if the user has the Admin permission
-    pub fn check_admin(&self, principal: &Principal) -> Result<(), PermissionError> {
-        self.check_has_all_permissions(principal, &[Permission::Admin])
     }
 
     /// Returns NotAuthorized error if the user does not have all permissions
     pub fn check_has_all_permissions(
         &self,
         principal: &Principal,
-        permissions: &[Permission],
+        permissions: &[T],
     ) -> Result<(), PermissionError> {
         if self.has_all_permissions(principal, permissions) {
             Ok(())
@@ -94,7 +86,7 @@ impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
     }
 
     /// Returns whether the user has all the required permissions
-    pub fn has_all_permissions(&self, principal: &Principal, permissions: &[Permission]) -> bool {
+    pub fn has_all_permissions(&self, principal: &Principal, permissions: &[T]) -> bool {
         self.permission_data.with_borrow(|permission_data| {
             if let Some(permissions_list) = permission_data.get(principal) {
                 permissions
@@ -110,7 +102,7 @@ impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
     pub fn check_has_any_permission(
         &self,
         principal: &Principal,
-        permissions: &[Permission],
+        permissions: &[T],
     ) -> Result<(), PermissionError> {
         if self.has_any_permission(principal, permissions) {
             Ok(())
@@ -120,7 +112,7 @@ impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
     }
 
     /// Return whether the user has at least one of the required permissions
-    pub fn has_any_permission(&self, principal: &Principal, permissions: &[Permission]) -> bool {
+    pub fn has_any_permission(&self, principal: &Principal, permissions: &[T]) -> bool {
         self.permission_data.with_borrow(|permission_data| {
 
         if let Some(permissions_list) = permission_data.get(principal) {
@@ -138,8 +130,8 @@ impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
     pub fn add_permissions(
         &mut self,
         principal: Principal,
-        permissions: Vec<Permission>,
-    ) -> Result<PermissionList, PermissionError> {
+        permissions: Vec<T>,
+    ) -> Result<PermissionList<T>, PermissionError> {
         self.check_anonymous_principal(&principal)?;
         self.permission_data.with_borrow_mut(|permission_data| {
             info!(
@@ -161,8 +153,8 @@ impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
     pub fn remove_permissions(
         &mut self,
         principal: Principal,
-        permissions: &[Permission],
-    ) -> Result<PermissionList, PermissionError> {
+        permissions: &[T],
+    ) -> Result<PermissionList<T>, PermissionError> {
         self.check_anonymous_principal(&principal)?;
         self.permission_data.with_borrow_mut(|permission_data| {
             let mut existing_permissions = permission_data.get(&principal).unwrap_or_default();
@@ -186,7 +178,7 @@ impl<S: Storage<PermissionServiceStorage>> PermissionService<S> {
     }
 
     /// Return the user permissions
-    pub fn get_permissions(&self, principal: &Principal) -> PermissionList {
+    pub fn get_permissions(&self, principal: &Principal) -> PermissionList<T> {
         self.permission_data.with_borrow(|permission_data| {
             permission_data.get(principal).unwrap_or_default()
         })
@@ -214,17 +206,18 @@ mod tests {
 
 
     use ic_stable_structures::memory_manager::{MemoryId, MemoryManager};
+    use serde::Deserialize;
 
     use super::*;
 
         #[test]
     fn test_candid_permission_list() {
         let permission_list = PermissionList {
-            permissions: HashSet::from_iter(vec![Permission::Admin, Permission::ReadLogs]),
+            permissions: HashSet::from_iter(vec![TestPermission::Admin, TestPermission::ReadLogs]),
         };
 
         let serialized = Encode!(&permission_list).unwrap();
-        let deserialized = Decode!(serialized.as_slice(), PermissionList).unwrap();
+        let deserialized = Decode!(serialized.as_slice(), PermissionList<TestPermission>).unwrap();
 
         assert_eq!(permission_list, deserialized);
     }
@@ -232,7 +225,7 @@ mod tests {
     #[test]
     fn test_storable_permission_list() {
         let permission_list = PermissionList {
-            permissions: HashSet::from_iter(vec![Permission::Admin, Permission::ReadLogs]),
+            permissions: HashSet::from_iter(vec![TestPermission::Admin, TestPermission::ReadLogs]),
         };
 
         let serialized = permission_list.to_bytes();
@@ -249,23 +242,23 @@ let mut permissions = new_permission_service();
 
         // Assert
         assert!(permissions.has_all_permissions(&principal, &[]));
-        assert!(!permissions.has_all_permissions(&principal, &[Permission::ReadLogs]));
+        assert!(!permissions.has_all_permissions(&principal, &[TestPermission::ReadLogs]));
         assert!(permissions.has_any_permission(&principal, &[]));
         assert!(
-            !permissions.has_any_permission(&principal, &[Permission::UpdateLogsConfiguration])
+            !permissions.has_any_permission(&principal, &[TestPermission::UpdateLogs])
         );
 
         permissions
-            .add_permissions(principal, vec![Permission::ReadLogs])
+            .add_permissions(principal, vec![TestPermission::ReadLogs])
             .unwrap();
 
         assert!(permissions.has_all_permissions(&principal, &[]));
         assert!(
-            !permissions.has_all_permissions(&principal, &[Permission::UpdateLogsConfiguration])
+            !permissions.has_all_permissions(&principal, &[TestPermission::UpdateLogs])
         );
         assert!(permissions.has_any_permission(&principal, &[]));
         assert!(
-            !permissions.has_any_permission(&principal, &[Permission::UpdateLogsConfiguration])
+            !permissions.has_any_permission(&principal, &[TestPermission::UpdateLogs])
         );
     }
 
@@ -284,30 +277,30 @@ let mut permissions = new_permission_service();        permissions.clear();
 
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![TestPermission::ReadLogs])
             },
             permissions
-                .add_permissions(principal, vec![Permission::ReadLogs])
+                .add_permissions(principal, vec![TestPermission::ReadLogs])
                 .unwrap()
         );
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![TestPermission::ReadLogs])
             },
             permissions.get_permissions(&principal)
         );
 
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![TestPermission::ReadLogs])
             },
             permissions
-                .add_permissions(principal, vec![Permission::ReadLogs, Permission::ReadLogs])
+                .add_permissions(principal, vec![TestPermission::ReadLogs, TestPermission::ReadLogs])
                 .unwrap()
         );
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![TestPermission::ReadLogs])
             },
             permissions.get_permissions(&principal)
         );
@@ -315,19 +308,19 @@ let mut permissions = new_permission_service();        permissions.clear();
         assert_eq!(
             PermissionList {
                 permissions: HashSet::from_iter(vec![
-                    Permission::ReadLogs,
-                    Permission::UpdateLogsConfiguration
+                    TestPermission::ReadLogs,
+                    TestPermission::UpdateLogs
                 ])
             },
             permissions
-                .add_permissions(principal, vec![Permission::UpdateLogsConfiguration])
+                .add_permissions(principal, vec![TestPermission::UpdateLogs])
                 .unwrap()
         );
         assert_eq!(
             PermissionList {
                 permissions: HashSet::from_iter(vec![
-                    Permission::ReadLogs,
-                    Permission::UpdateLogsConfiguration
+                    TestPermission::ReadLogs,
+                    TestPermission::UpdateLogs
                 ])
             },
             permissions.get_permissions(&principal)
@@ -338,9 +331,9 @@ let mut permissions = new_permission_service();        permissions.clear();
             permissions.remove_permissions(
                 principal,
                 &[
-                    Permission::UpdateLogsConfiguration,
-                    Permission::ReadLogs,
-                    Permission::Admin
+                    TestPermission::UpdateLogs,
+                    TestPermission::ReadLogs,
+                    TestPermission::Admin
                 ]
             ).unwrap()
         );
@@ -353,7 +346,7 @@ let mut permissions = new_permission_service();        permissions.clear();
             PermissionList::default(),
             permissions.remove_permissions(
                 principal,
-                &[Permission::UpdateLogsConfiguration, Permission::ReadLogs]
+                &[TestPermission::UpdateLogs, TestPermission::ReadLogs]
             ).unwrap()
         );
         assert_eq!(
@@ -375,226 +368,226 @@ let mut permissions = new_permission_service();
         // Add permissions
         {
             permissions
-                .add_permissions(principal_2, vec![Permission::ReadLogs])
+                .add_permissions(principal_2, vec![TestPermission::ReadLogs])
                 .unwrap();
             permissions
-                .add_permissions(principal_3, vec![Permission::UpdateLogsConfiguration])
+                .add_permissions(principal_3, vec![TestPermission::UpdateLogs])
                 .unwrap();
             permissions
                 .add_permissions(
                     principal_4,
-                    vec![Permission::ReadLogs, Permission::UpdateLogsConfiguration],
+                    vec![TestPermission::ReadLogs, TestPermission::UpdateLogs],
                 )
                 .unwrap();
             permissions
-                .add_permissions(principal_5, vec![Permission::ReadLogs])
+                .add_permissions(principal_5, vec![TestPermission::ReadLogs])
                 .unwrap();
             permissions
-                .add_permissions(principal_5, vec![Permission::UpdateLogsConfiguration])
+                .add_permissions(principal_5, vec![TestPermission::UpdateLogs])
                 .unwrap();
 
             // Assert
-            assert!(!permissions.has_all_permissions(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_1, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_all_permissions(&principal_1, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_1, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_1, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_any_permission(&principal_1, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_1, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_any_permission(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(permissions.has_all_permissions(&principal_2, &[Permission::ReadLogs]));
+            assert!(permissions.has_all_permissions(&principal_2, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_all_permissions(&principal_2, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_2, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(permissions.has_any_permission(&principal_2, &[Permission::ReadLogs]));
+            assert!(permissions.has_any_permission(&principal_2, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_any_permission(&principal_2, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_2, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_any_permission(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_3, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_all_permissions(&principal_3, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_3, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_3, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_any_permission(&principal_3, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_3, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_any_permission(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(permissions.has_all_permissions(&principal_4, &[Permission::ReadLogs]));
+            assert!(permissions.has_all_permissions(&principal_4, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_all_permissions(&principal_4, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_4, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_all_permissions(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(permissions.has_any_permission(&principal_4, &[Permission::ReadLogs]));
+            assert!(permissions.has_any_permission(&principal_4, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_any_permission(&principal_4, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_4, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_any_permission(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(permissions.has_all_permissions(&principal_5, &[Permission::ReadLogs]));
+            assert!(permissions.has_all_permissions(&principal_5, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_all_permissions(&principal_5, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_5, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_all_permissions(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(permissions.has_any_permission(&principal_5, &[Permission::ReadLogs]));
+            assert!(permissions.has_any_permission(&principal_5, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_any_permission(&principal_5, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_5, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_any_permission(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
         }
 
         // remove permissions
         {
-            permissions.remove_permissions(principal_1, &[Permission::ReadLogs]);
-            permissions.remove_permissions(principal_2, &[Permission::ReadLogs]);
-            permissions.remove_permissions(principal_3, &[Permission::ReadLogs]);
-            permissions.remove_permissions(principal_4, &[Permission::ReadLogs]);
+            permissions.remove_permissions(principal_1, &[TestPermission::ReadLogs]).unwrap();
+            permissions.remove_permissions(principal_2, &[TestPermission::ReadLogs]).unwrap();
+            permissions.remove_permissions(principal_3, &[TestPermission::ReadLogs]).unwrap();
+            permissions.remove_permissions(principal_4, &[TestPermission::ReadLogs]).unwrap();
             permissions.remove_permissions(
                 principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration],
-            );
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs],
+            ).unwrap();
 
             // Assert
-            assert!(!permissions.has_all_permissions(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_1, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_all_permissions(&principal_1, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_1, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_1, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_any_permission(&principal_1, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_1, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_any_permission(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_2, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_2, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_all_permissions(&principal_2, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_2, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_2, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_2, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_any_permission(&principal_2, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_2, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_any_permission(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_3, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_all_permissions(&principal_3, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_3, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_3, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_any_permission(&principal_3, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_3, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_any_permission(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_4, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_4, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_all_permissions(&principal_4, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_4, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_4, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_4, &[TestPermission::ReadLogs]));
             assert!(
                 permissions
-                    .has_any_permission(&principal_4, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_4, &[TestPermission::UpdateLogs])
             );
             assert!(permissions.has_any_permission(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_5, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_5, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_all_permissions(&principal_5, &[Permission::UpdateLogsConfiguration])
+                    .has_all_permissions(&principal_5, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_all_permissions(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
-            assert!(!permissions.has_any_permission(&principal_5, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_5, &[TestPermission::ReadLogs]));
             assert!(
                 !permissions
-                    .has_any_permission(&principal_5, &[Permission::UpdateLogsConfiguration])
+                    .has_any_permission(&principal_5, &[TestPermission::UpdateLogs])
             );
             assert!(!permissions.has_any_permission(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             ));
         }
     }
@@ -607,7 +600,7 @@ let mut permissions = new_permission_service();
         let principal_1 = Principal::from_slice(&[1; 29]);
 
         permissions
-            .add_permissions(principal_1, vec![Permission::ReadLogs])
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs])
             .unwrap();
 
         // Assert
@@ -615,17 +608,17 @@ let mut permissions = new_permission_service();
             Err(PermissionError::NotAuthorized),
             permissions.check_has_all_permissions(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
             )
         );
         assert!(
             permissions
-                .check_has_all_permissions(&principal_1, &[Permission::ReadLogs])
+                .check_has_all_permissions(&principal_1, &[TestPermission::ReadLogs])
                 .is_ok()
         );
         assert!(
             permissions
-                .check_has_all_permissions(&principal_1, &[Permission::UpdateLogsConfiguration])
+                .check_has_all_permissions(&principal_1, &[TestPermission::UpdateLogs])
                 .is_err()
         );
 
@@ -633,62 +626,31 @@ let mut permissions = new_permission_service();
             permissions
                 .check_has_any_permission(
                     &principal_1,
-                    &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                    &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
                 )
                 .is_ok()
         );
         assert!(
             permissions
-                .check_has_any_permission(&principal_1, &[Permission::ReadLogs])
+                .check_has_any_permission(&principal_1, &[TestPermission::ReadLogs])
                 .is_ok()
         );
         assert_eq!(
             Err(PermissionError::NotAuthorized),
             permissions
-                .check_has_any_permission(&principal_1, &[Permission::UpdateLogsConfiguration])
+                .check_has_any_permission(&principal_1, &[TestPermission::UpdateLogs])
         );
     }
 
     #[test]
-    fn should_check_if_user_is_admin() {
-        // Arrange
-        let mut permissions = new_permission_service();
-
-        let principal_1 = Principal::from_slice(&[1; 29]);
-        assert_eq!(
-            Err(PermissionError::NotAuthorized),
-            permissions.check_admin(&principal_1)
-        );
-
-        permissions
-            .add_permissions(principal_1, vec![Permission::ReadLogs])
-            .unwrap();
-        assert_eq!(
-            Err(PermissionError::NotAuthorized),
-            permissions.check_admin(&principal_1)
-        );
-
-        permissions
-            .add_permissions(principal_1, vec![Permission::Admin])
-            .unwrap();
-        assert_eq!(Ok(()), permissions.check_admin(&principal_1));
-
-        permissions.remove_permissions(principal_1, &[Permission::Admin]);
-        assert_eq!(
-            Err(PermissionError::NotAuthorized),
-            permissions.check_admin(&principal_1)
-        );
-    }
-
-    #[test]
-    fn check_anonymous_principal_is_rejected() {
+    fn check_cannot_add_permissions_for_anonymous_principal() {
         // Arrange
         let mut permissions = new_permission_service();
 
         let principal_1 = Principal::anonymous();
 
         let res = permissions
-            .add_permissions(principal_1, vec![Permission::ReadLogs])
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs])
             .unwrap_err();
 
         assert_eq!(
@@ -697,10 +659,40 @@ let mut permissions = new_permission_service();
         );
     }
 
-    fn new_permission_service() -> PermissionService<RefCell<PermissionServiceStorage>> {
+    #[test]
+    fn check_cannot_remove_permissions_for_anonymous_principal() {
+        // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::anonymous();
+
+        let res = permissions
+            .remove_permissions(principal_1, &[TestPermission::ReadLogs])
+            .unwrap_err();
+
+        assert_eq!(
+            PermissionError::AnonimousUserNotAllowed,
+            res
+        );
+    }
+
+    fn new_permission_service() -> TestPermissionService {
         let store = RefCell::new(BTreeMap::new(
             MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1)),
         ));
         PermissionService::new(store)
+    }
+
+    type TestPermissionService = PermissionService<RefCell<PermissionServiceStorage<TestPermission>>, TestPermission>;
+
+    /// Principal specific permission
+    #[derive(
+        Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
+    )]
+    enum TestPermission {
+        Admin,
+        ReadLogs,
+        ResetState,
+        UpdateLogs
     }
 }
