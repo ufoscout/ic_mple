@@ -1,5 +1,5 @@
 [package]
-name = "ic_mpl_permissions"
+name = "ic_mple_permissions"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
@@ -10,7 +10,7 @@ keywords = ["IC", "internet-computer", "permissions"]
 
 [dependencies]
 candid = { workspace = true }
-log = { workspace = true, features = ["std"] }
+log = { workspace = true }
 ic-cdk = { workspace = true }
 ic-stable-structures = { workspace = true }
 ic_mple_utils = { workspace = true }
