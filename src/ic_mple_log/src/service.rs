@@ -18,7 +18,7 @@ impl Storable for LogSettings {
     }
 
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(&bytes, LogSettings).unwrap()
+        Decode!(&bytes, Self).unwrap()
     }
 
     fn into_bytes(self) -> Vec<u8> {
