@@ -85,6 +85,34 @@ where
         }
     }
 
+    /// Panics if the user does not have the required permission
+    pub fn must_have_permission(&self, principal: &Principal, permission: T) {
+        self.check_has_permission(principal, permission).unwrap();
+    }
+
+    /// Panics if the user does not have all the required permissions
+    pub fn must_have_all_permissions(&self, principal: &Principal, permissions: &[T]) {
+        self.check_has_all_permissions(principal, permissions).unwrap();
+    }
+
+    /// Panics if the user does not have at least one of the required permissions
+    pub fn must_have_any_permission(&self, principal: &Principal, permissions: &[T]) {
+        self.check_has_any_permission(principal, permissions).unwrap();
+    }
+
+    /// Returns NotAuthorized error if the user does not have the required permission
+    pub fn check_has_permission(
+        &self,
+        principal: &Principal,
+        permission: T,
+    ) -> Result<(), PermissionError> {
+        if self.has_all_permissions(principal, &[permission]) {
+            Ok(())
+        } else {
+            Err(PermissionError::NotAuthorized)
+        }
+    }
+
     /// Returns NotAuthorized error if the user does not have all permissions
     pub fn check_has_all_permissions(
         &self,
@@ -395,7 +423,7 @@ mod tests {
                 .add_permissions(principal_5, vec![TestPermission::UpdateLogs])
                 .unwrap();
 
-            // Assert
+            // Assert            
             assert!(!permissions.has_all_permissions(&principal_1, &[TestPermission::ReadLogs]));
             assert!(!permissions.has_all_permissions(&principal_1, &[TestPermission::UpdateLogs]));
             assert!(!permissions.has_all_permissions(
@@ -565,6 +593,19 @@ mod tests {
         // Assert
         assert_eq!(
             Err(PermissionError::NotAuthorized),
+            permissions.check_has_permission(
+                &principal_1,
+                TestPermission::UpdateLogs
+            )
+        );
+        assert!(
+            permissions.check_has_permission(
+                &principal_1,
+                TestPermission::ReadLogs
+            ).is_ok()
+        );
+        assert_eq!(
+            Err(PermissionError::NotAuthorized),
             permissions.check_has_all_permissions(
                 &principal_1,
                 &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
@@ -626,6 +667,105 @@ mod tests {
             .unwrap_err();
 
         assert_eq!(PermissionError::AnonimousUserNotAllowed, res);
+    }
+
+    /// Test that panic happens when the user does not have the permission
+    #[test]
+    #[should_panic(expected = "NotAuthorized")]
+    fn should_panic_if_user_does_not_have_permission() {
+        // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::from_slice(&[1; 29]);
+
+        permissions
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs])
+            .unwrap();
+
+        // Act
+        permissions.must_have_permission(&principal_1, TestPermission::Admin);
+    }
+
+    /// Test that panic does not happen when the user haves the permission
+    #[test]
+    fn should_not_panic_if_user_has_permission() {
+        // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::from_slice(&[1; 29]);
+
+        permissions
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs])
+            .unwrap();
+
+        // Act
+        permissions.must_have_permission(&principal_1, TestPermission::ReadLogs);
+    }
+
+    /// Test that panic happens when the user does not have all the permissions
+    #[test]
+    #[should_panic(expected = "NotAuthorized")]
+    fn should_panic_if_user_does_not_have_all_permissions() {
+                // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::from_slice(&[1; 29]);
+
+        permissions
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs, TestPermission::UpdateLogs])
+            .unwrap();
+
+        // Act
+        permissions.must_have_all_permissions(&principal_1, &[TestPermission::ReadLogs, TestPermission::UpdateLogs, TestPermission::Admin]);
+    }
+
+    /// Test that panic does not happen when the user has all the permissions
+    #[test]
+    fn should_not_panic_if_user_has_all_permissions() {
+                // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::from_slice(&[1; 29]);
+
+        permissions
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs, TestPermission::UpdateLogs])
+            .unwrap();
+
+        // Act
+        permissions.must_have_all_permissions(&principal_1, &[TestPermission::ReadLogs, TestPermission::UpdateLogs]);
+    }
+
+    /// Test that panic happens when the user does not have any of the permissions
+    #[test]
+    #[should_panic(expected = "NotAuthorized")]
+    fn should_panic_if_user_does_not_have_any_permissions() {
+                // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::from_slice(&[1; 29]);
+
+        permissions
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs, TestPermission::UpdateLogs])
+            .unwrap();
+
+        // Act
+        permissions.must_have_any_permission(&principal_1, &[TestPermission::Admin]);
+    }
+
+    /// Test that panic does not happen when the user has any of the permissions
+    #[test]
+    fn should_not_panic_if_user_has_any_permissions() {
+                // Arrange
+        let mut permissions = new_permission_service();
+
+        let principal_1 = Principal::from_slice(&[1; 29]);
+
+        permissions
+            .add_permissions(principal_1, vec![TestPermission::ReadLogs])
+            .unwrap();
+
+        // Act
+        permissions.must_have_any_permission(&principal_1, &[TestPermission::ReadLogs, TestPermission::UpdateLogs, TestPermission::Admin]);
     }
 
     fn new_permission_service() -> TestPermissionService {
