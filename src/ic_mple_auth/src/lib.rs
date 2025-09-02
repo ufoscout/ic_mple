@@ -92,12 +92,14 @@ where
 
     /// Panics if the user does not have all the required permissions
     pub fn must_have_all_permissions(&self, principal: &Principal, permissions: &[T]) {
-        self.check_has_all_permissions(principal, permissions).unwrap();
+        self.check_has_all_permissions(principal, permissions)
+            .unwrap();
     }
 
     /// Panics if the user does not have at least one of the required permissions
     pub fn must_have_any_permission(&self, principal: &Principal, permissions: &[T]) {
-        self.check_has_any_permission(principal, permissions).unwrap();
+        self.check_has_any_permission(principal, permissions)
+            .unwrap();
     }
 
     /// Returns NotAuthorized error if the user does not have the required permission
@@ -173,19 +175,21 @@ where
         permissions: Vec<T>,
     ) -> Result<PermissionList<T>, PermissionError> {
         self.check_anonymous_principal(&principal)?;
-        self.permission_storage.with_borrow_mut(|permission_storage| {
-            info!(
-                "Adding permissions {:?} to principal {}",
-                permissions, principal
-            );
+        self.permission_storage
+            .with_borrow_mut(|permission_storage| {
+                info!(
+                    "Adding permissions {:?} to principal {}",
+                    permissions, principal
+                );
 
-            let mut existing_permissions = permission_storage.get(&principal).unwrap_or_default();
-            for permission in permissions {
-                existing_permissions.permissions.insert(permission);
-            }
-            permission_storage.insert(principal, existing_permissions.clone());
-            Ok(existing_permissions)
-        })
+                let mut existing_permissions =
+                    permission_storage.get(&principal).unwrap_or_default();
+                for permission in permissions {
+                    existing_permissions.permissions.insert(permission);
+                }
+                permission_storage.insert(principal, existing_permissions.clone());
+                Ok(existing_permissions)
+            })
     }
 
     /// Remove permissions from a user
@@ -195,24 +199,26 @@ where
         permissions: &[T],
     ) -> Result<PermissionList<T>, PermissionError> {
         self.check_anonymous_principal(&principal)?;
-        self.permission_storage.with_borrow_mut(|permission_storage| {
-            let mut existing_permissions = permission_storage.get(&principal).unwrap_or_default();
+        self.permission_storage
+            .with_borrow_mut(|permission_storage| {
+                let mut existing_permissions =
+                    permission_storage.get(&principal).unwrap_or_default();
 
-            info!(
-                "Removing permissions {:?} from principal {principal}",
-                permissions
-            );
+                info!(
+                    "Removing permissions {:?} from principal {principal}",
+                    permissions
+                );
 
-            existing_permissions
-                .permissions
-                .retain(|x| !permissions.contains(x));
-            if !existing_permissions.permissions.is_empty() {
-                permission_storage.insert(principal, existing_permissions.clone());
-            } else {
-                permission_storage.remove(&principal);
-            }
-            Ok(existing_permissions)
-        })
+                existing_permissions
+                    .permissions
+                    .retain(|x| !permissions.contains(x));
+                if !existing_permissions.permissions.is_empty() {
+                    permission_storage.insert(principal, existing_permissions.clone());
+                } else {
+                    permission_storage.remove(&principal);
+                }
+                Ok(existing_permissions)
+            })
     }
 
     /// Return the user permissions
@@ -423,7 +429,7 @@ mod tests {
                 .add_permissions(principal_5, vec![TestPermission::UpdateLogs])
                 .unwrap();
 
-            // Assert            
+            // Assert
             assert!(!permissions.has_all_permissions(&principal_1, &[TestPermission::ReadLogs]));
             assert!(!permissions.has_all_permissions(&principal_1, &[TestPermission::UpdateLogs]));
             assert!(!permissions.has_all_permissions(
@@ -593,16 +599,12 @@ mod tests {
         // Assert
         assert_eq!(
             Err(PermissionError::NotAuthorized),
-            permissions.check_has_permission(
-                &principal_1,
-                TestPermission::UpdateLogs
-            )
+            permissions.check_has_permission(&principal_1, TestPermission::UpdateLogs)
         );
         assert!(
-            permissions.check_has_permission(
-                &principal_1,
-                TestPermission::ReadLogs
-            ).is_ok()
+            permissions
+                .check_has_permission(&principal_1, TestPermission::ReadLogs)
+                .is_ok()
         );
         assert_eq!(
             Err(PermissionError::NotAuthorized),
@@ -706,46 +708,65 @@ mod tests {
     #[test]
     #[should_panic(expected = "NotAuthorized")]
     fn should_panic_if_user_does_not_have_all_permissions() {
-                // Arrange
+        // Arrange
         let mut permissions = new_permission_service();
 
         let principal_1 = Principal::from_slice(&[1; 29]);
 
         permissions
-            .add_permissions(principal_1, vec![TestPermission::ReadLogs, TestPermission::UpdateLogs])
+            .add_permissions(
+                principal_1,
+                vec![TestPermission::ReadLogs, TestPermission::UpdateLogs],
+            )
             .unwrap();
 
         // Act
-        permissions.must_have_all_permissions(&principal_1, &[TestPermission::ReadLogs, TestPermission::UpdateLogs, TestPermission::Admin]);
+        permissions.must_have_all_permissions(
+            &principal_1,
+            &[
+                TestPermission::ReadLogs,
+                TestPermission::UpdateLogs,
+                TestPermission::Admin,
+            ],
+        );
     }
 
     /// Test that panic does not happen when the user has all the permissions
     #[test]
     fn should_not_panic_if_user_has_all_permissions() {
-                // Arrange
+        // Arrange
         let mut permissions = new_permission_service();
 
         let principal_1 = Principal::from_slice(&[1; 29]);
 
         permissions
-            .add_permissions(principal_1, vec![TestPermission::ReadLogs, TestPermission::UpdateLogs])
+            .add_permissions(
+                principal_1,
+                vec![TestPermission::ReadLogs, TestPermission::UpdateLogs],
+            )
             .unwrap();
 
         // Act
-        permissions.must_have_all_permissions(&principal_1, &[TestPermission::ReadLogs, TestPermission::UpdateLogs]);
+        permissions.must_have_all_permissions(
+            &principal_1,
+            &[TestPermission::ReadLogs, TestPermission::UpdateLogs],
+        );
     }
 
     /// Test that panic happens when the user does not have any of the permissions
     #[test]
     #[should_panic(expected = "NotAuthorized")]
     fn should_panic_if_user_does_not_have_any_permissions() {
-                // Arrange
+        // Arrange
         let mut permissions = new_permission_service();
 
         let principal_1 = Principal::from_slice(&[1; 29]);
 
         permissions
-            .add_permissions(principal_1, vec![TestPermission::ReadLogs, TestPermission::UpdateLogs])
+            .add_permissions(
+                principal_1,
+                vec![TestPermission::ReadLogs, TestPermission::UpdateLogs],
+            )
             .unwrap();
 
         // Act
@@ -755,7 +776,7 @@ mod tests {
     /// Test that panic does not happen when the user has any of the permissions
     #[test]
     fn should_not_panic_if_user_has_any_permissions() {
-                // Arrange
+        // Arrange
         let mut permissions = new_permission_service();
 
         let principal_1 = Principal::from_slice(&[1; 29]);
@@ -765,7 +786,14 @@ mod tests {
             .unwrap();
 
         // Act
-        permissions.must_have_any_permission(&principal_1, &[TestPermission::ReadLogs, TestPermission::UpdateLogs, TestPermission::Admin]);
+        permissions.must_have_any_permission(
+            &principal_1,
+            &[
+                TestPermission::ReadLogs,
+                TestPermission::UpdateLogs,
+                TestPermission::Admin,
+            ],
+        );
     }
 
     fn new_permission_service() -> TestPermissionService {
