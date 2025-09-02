@@ -56,31 +56,31 @@ where
     }
 }
 
-pub type PermissionServiceStorage<T> =
+pub type AuthServiceStorage<T> =
     BTreeMap<Principal, PermissionList<T>, VirtualMemory<DefaultMemoryImpl>>;
 
 /// A service for managing user permissions
-pub struct PermissionService<
-    S: Storage<PermissionServiceStorage<T>>,
+pub struct AuthService<
+    S: Storage<AuthServiceStorage<T>>,
     T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug,
 > where
     T: DeserializeOwned,
 {
-    permission_data: S,
+    permission_storage: S,
     phantom: std::marker::PhantomData<T>,
 }
 
 impl<
-    S: Storage<PermissionServiceStorage<T>>,
+    S: Storage<AuthServiceStorage<T>>,
     T: PartialEq + CandidType + PartialEq + Eq + serde::Serialize + Hash + Clone + std::fmt::Debug,
-> PermissionService<S, T>
+> AuthService<S, T>
 where
     T: DeserializeOwned,
 {
     /// Instantiates a new PermissionService
-    pub fn new(permission_data: S) -> Self {
+    pub fn new(permission_storage: S) -> Self {
         Self {
-            permission_data,
+            permission_storage,
             phantom: std::marker::PhantomData,
         }
     }
@@ -100,8 +100,8 @@ where
 
     /// Returns whether the user has all the required permissions
     pub fn has_all_permissions(&self, principal: &Principal, permissions: &[T]) -> bool {
-        self.permission_data.with_borrow(|permission_data| {
-            if let Some(permissions_list) = permission_data.get(principal) {
+        self.permission_storage.with_borrow(|permission_storage| {
+            if let Some(permissions_list) = permission_storage.get(principal) {
                 permissions
                     .iter()
                     .all(|item| permissions_list.permissions.contains(item))
@@ -126,8 +126,8 @@ where
 
     /// Return whether the user has at least one of the required permissions
     pub fn has_any_permission(&self, principal: &Principal, permissions: &[T]) -> bool {
-        self.permission_data.with_borrow(|permission_data| {
-            if let Some(permissions_list) = permission_data.get(principal) {
+        self.permission_storage.with_borrow(|permission_storage| {
+            if let Some(permissions_list) = permission_storage.get(principal) {
                 permissions
                     .iter()
                     .any(|item| permissions_list.permissions.contains(item))
@@ -145,17 +145,17 @@ where
         permissions: Vec<T>,
     ) -> Result<PermissionList<T>, PermissionError> {
         self.check_anonymous_principal(&principal)?;
-        self.permission_data.with_borrow_mut(|permission_data| {
+        self.permission_storage.with_borrow_mut(|permission_storage| {
             info!(
                 "Adding permissions {:?} to principal {}",
                 permissions, principal
             );
 
-            let mut existing_permissions = permission_data.get(&principal).unwrap_or_default();
+            let mut existing_permissions = permission_storage.get(&principal).unwrap_or_default();
             for permission in permissions {
                 existing_permissions.permissions.insert(permission);
             }
-            permission_data.insert(principal, existing_permissions.clone());
+            permission_storage.insert(principal, existing_permissions.clone());
             Ok(existing_permissions)
         })
     }
@@ -167,8 +167,8 @@ where
         permissions: &[T],
     ) -> Result<PermissionList<T>, PermissionError> {
         self.check_anonymous_principal(&principal)?;
-        self.permission_data.with_borrow_mut(|permission_data| {
-            let mut existing_permissions = permission_data.get(&principal).unwrap_or_default();
+        self.permission_storage.with_borrow_mut(|permission_storage| {
+            let mut existing_permissions = permission_storage.get(&principal).unwrap_or_default();
 
             info!(
                 "Removing permissions {:?} from principal {principal}",
@@ -179,9 +179,9 @@ where
                 .permissions
                 .retain(|x| !permissions.contains(x));
             if !existing_permissions.permissions.is_empty() {
-                permission_data.insert(principal, existing_permissions.clone());
+                permission_storage.insert(principal, existing_permissions.clone());
             } else {
-                permission_data.remove(&principal);
+                permission_storage.remove(&principal);
             }
             Ok(existing_permissions)
         })
@@ -189,14 +189,14 @@ where
 
     /// Return the user permissions
     pub fn get_permissions(&self, principal: &Principal) -> PermissionList<T> {
-        self.permission_data
-            .with_borrow(|permission_data| permission_data.get(principal).unwrap_or_default())
+        self.permission_storage
+            .with_borrow(|permission_storage| permission_storage.get(principal).unwrap_or_default())
     }
 
     /// Clear the Whitelist state
     pub fn clear(&mut self) {
-        self.permission_data
-            .with_borrow_mut(|permission_data| permission_data.clear_new())
+        self.permission_storage
+            .with_borrow_mut(|permission_storage| permission_storage.clear_new())
     }
 
     fn check_anonymous_principal(&self, principal: &Principal) -> Result<(), PermissionError> {
@@ -632,11 +632,11 @@ mod tests {
         let store = RefCell::new(BTreeMap::new(
             MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1)),
         ));
-        PermissionService::new(store)
+        AuthService::new(store)
     }
 
     type TestPermissionService =
-        PermissionService<RefCell<PermissionServiceStorage<TestPermission>>, TestPermission>;
+        AuthService<RefCell<AuthServiceStorage<TestPermission>>, TestPermission>;
 
     /// Principal specific permission
     #[derive(

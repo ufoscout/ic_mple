@@ -1,6 +1,6 @@
 [package]
-name = "ic_mple_permissions"
-description = "Generic service for managing user permissions in the Internet Computer" 
+name = "ic_mple_auth"
+description = "Generic service for managing user authorization and permissions in the Internet Computer" 
 
 edition.workspace = true
 license.workspace = true
@@ -8,7 +8,7 @@ version.workspace = true
 homepage.workspace = true
 repository.workspace = true
 authors.workspace = true
-keywords = ["IC", "internet-computer", "permissions"]
+keywords = ["IC", "internet-computer", "authorization", "permissions"]
 
 [dependencies]
 candid = { workspace = true }
