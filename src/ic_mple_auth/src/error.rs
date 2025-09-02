@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq, Eq)]
-pub enum PermissionError {
+pub enum AuthError {
     #[error("NotAuthorized")]
     NotAuthorized,
 

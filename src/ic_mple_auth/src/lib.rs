@@ -15,7 +15,7 @@ use ic_stable_structures::storable::Bound;
 use log::info;
 use serde::de::DeserializeOwned;
 
-use crate::error::PermissionError;
+use crate::error::AuthError;
 
 pub mod error;
 
@@ -107,11 +107,11 @@ where
         &self,
         principal: &Principal,
         permission: T,
-    ) -> Result<(), PermissionError> {
+    ) -> Result<(), AuthError> {
         if self.has_all_permissions(principal, &[permission]) {
             Ok(())
         } else {
-            Err(PermissionError::NotAuthorized)
+            Err(AuthError::NotAuthorized)
         }
     }
 
@@ -120,11 +120,11 @@ where
         &self,
         principal: &Principal,
         permissions: &[T],
-    ) -> Result<(), PermissionError> {
+    ) -> Result<(), AuthError> {
         if self.has_all_permissions(principal, permissions) {
             Ok(())
         } else {
-            Err(PermissionError::NotAuthorized)
+            Err(AuthError::NotAuthorized)
         }
     }
 
@@ -146,11 +146,11 @@ where
         &self,
         principal: &Principal,
         permissions: &[T],
-    ) -> Result<(), PermissionError> {
+    ) -> Result<(), AuthError> {
         if self.has_any_permission(principal, permissions) {
             Ok(())
         } else {
-            Err(PermissionError::NotAuthorized)
+            Err(AuthError::NotAuthorized)
         }
     }
 
@@ -173,7 +173,7 @@ where
         &mut self,
         principal: Principal,
         permissions: Vec<T>,
-    ) -> Result<PermissionList<T>, PermissionError> {
+    ) -> Result<PermissionList<T>, AuthError> {
         self.check_anonymous_principal(&principal)?;
         self.permission_storage
             .with_borrow_mut(|permission_storage| {
@@ -197,7 +197,7 @@ where
         &mut self,
         principal: Principal,
         permissions: &[T],
-    ) -> Result<PermissionList<T>, PermissionError> {
+    ) -> Result<PermissionList<T>, AuthError> {
         self.check_anonymous_principal(&principal)?;
         self.permission_storage
             .with_borrow_mut(|permission_storage| {
@@ -233,9 +233,9 @@ where
             .with_borrow_mut(|permission_storage| permission_storage.clear_new())
     }
 
-    fn check_anonymous_principal(&self, principal: &Principal) -> Result<(), PermissionError> {
+    fn check_anonymous_principal(&self, principal: &Principal) -> Result<(), AuthError> {
         if principal == &Principal::anonymous() {
-            return Err(PermissionError::AnonimousUserNotAllowed);
+            return Err(AuthError::AnonimousUserNotAllowed);
         }
         Ok(())
     }
@@ -598,7 +598,7 @@ mod tests {
 
         // Assert
         assert_eq!(
-            Err(PermissionError::NotAuthorized),
+            Err(AuthError::NotAuthorized),
             permissions.check_has_permission(&principal_1, TestPermission::UpdateLogs)
         );
         assert!(
@@ -607,7 +607,7 @@ mod tests {
                 .is_ok()
         );
         assert_eq!(
-            Err(PermissionError::NotAuthorized),
+            Err(AuthError::NotAuthorized),
             permissions.check_has_all_permissions(
                 &principal_1,
                 &[TestPermission::ReadLogs, TestPermission::UpdateLogs]
@@ -638,7 +638,7 @@ mod tests {
                 .is_ok()
         );
         assert_eq!(
-            Err(PermissionError::NotAuthorized),
+            Err(AuthError::NotAuthorized),
             permissions.check_has_any_permission(&principal_1, &[TestPermission::UpdateLogs])
         );
     }
@@ -654,7 +654,7 @@ mod tests {
             .add_permissions(principal_1, vec![TestPermission::ReadLogs])
             .unwrap_err();
 
-        assert_eq!(PermissionError::AnonimousUserNotAllowed, res);
+        assert_eq!(AuthError::AnonimousUserNotAllowed, res);
     }
 
     #[test]
@@ -668,7 +668,7 @@ mod tests {
             .remove_permissions(principal_1, &[TestPermission::ReadLogs])
             .unwrap_err();
 
-        assert_eq!(PermissionError::AnonimousUserNotAllowed, res);
+        assert_eq!(AuthError::AnonimousUserNotAllowed, res);
     }
 
     /// Test that panic happens when the user does not have the permission
