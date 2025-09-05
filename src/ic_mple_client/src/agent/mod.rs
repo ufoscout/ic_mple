@@ -58,6 +58,7 @@ impl IcAgentClient {
 }
 
 impl CanisterClient for IcAgentClient {
+    
     async fn query<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send + Sync,
