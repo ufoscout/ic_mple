@@ -19,12 +19,31 @@ impl IcCanisterClient {
         }
     }
 
+    /// Unbounded wait call to the canister
+    /// [Document](https://internetcomputer.org/docs/building-apps/developer-tools/cdks/rust/intercanister#unbounded-wait-calls-semantics-and-error-cases)
     async fn call<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
     where
         T: ArgumentEncoder + Send,
         R: DeserializeOwned + CandidType,
     {
         let call_result = ic_cdk::call::Call::unbounded_wait(self.canister_id, method)
+            .with_args(&args)
+            .await
+            .map_err(|e| CanisterClientError::CanisterError(e.into()))?
+            .into_bytes();
+
+        use candid::Decode;
+        Decode!(&call_result, R).map_err(CanisterClientError::CandidError)
+    }
+
+    /// Bounded wait call to the canister
+    /// [Document](https://internetcomputer.org/docs/building-apps/developer-tools/cdks/rust/intercanister#bounded-wait-calls-semantics-and-error-cases)
+    async fn call_bounded<T, R>(&self, method: &str, args: T) -> CanisterClientResult<R>
+    where
+        T: ArgumentEncoder + Send,
+        R: DeserializeOwned + CandidType,
+    {
+        let call_result = ic_cdk::call::Call::bounded_wait(self.canister_id, method)
             .with_args(&args)
             .await
             .map_err(|e| CanisterClientError::CanisterError(e.into()))?
