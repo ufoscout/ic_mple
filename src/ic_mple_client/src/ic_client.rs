@@ -11,11 +11,10 @@ pub struct IcCanisterClient {
     /// The canister id of the Evm canister
     pub canister_id: Principal,
     // the call timeout
-    timeout_seconds: Option<u32>
+    timeout_seconds: Option<u32>,
 }
 
 impl IcCanisterClient {
-
     /// Creates a new instance of `IcCanisterClient`.
     ///
     /// # Parameters
@@ -26,7 +25,7 @@ impl IcCanisterClient {
     pub fn new(canister: Principal, timeout_seconds: Option<u32>) -> Self {
         Self {
             canister_id: canister,
-            timeout_seconds
+            timeout_seconds,
         }
     }
 
@@ -35,18 +34,16 @@ impl IcCanisterClient {
         T: ArgumentEncoder + Send,
         R: DeserializeOwned + CandidType,
     {
-        let call = if let Some(timeout_seconds) = self.timeout_seconds 
-        {
+        let call = if let Some(timeout_seconds) = self.timeout_seconds {
             ic_cdk::call::Call::bounded_wait(self.canister_id, method)
-              .change_timeout(timeout_seconds)
-              .with_args(&args)
-            
+                .change_timeout(timeout_seconds)
+                .with_args(&args)
         } else {
-            ic_cdk::call::Call::unbounded_wait(self.canister_id, method)
-             .with_args(&args)
+            ic_cdk::call::Call::unbounded_wait(self.canister_id, method).with_args(&args)
         };
 
-        let call_result = call.await
+        let call_result = call
+            .await
             .map_err(|e| CanisterClientError::CanisterError(e.into()))?
             .into_bytes();
 
