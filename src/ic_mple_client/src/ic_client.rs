@@ -20,8 +20,8 @@ impl IcCanisterClient {
     /// # Parameters
     /// - `canister`: The Principal of the canister to interact with.
     /// - `timeout_seconds`: The timeout in seconds for calls to the canister.
-    ///                      If `Some`, a bounded call with the specified timeout will be used.
-    ///                      If `None`, an unbounded call will be used.
+    ///   If `Some`, a bounded call with the specified timeout will be used.
+    ///   If `None`, an unbounded call will be used.
     pub fn new(canister: Principal, timeout_seconds: Option<u32>) -> Self {
         Self {
             canister_id: canister,
