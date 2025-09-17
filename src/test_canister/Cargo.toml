@@ -8,9 +8,3 @@ candid = { workspace = true }
 ic_mple_client = { workspace = true }
 ic-cdk = { workspace = true }
 serde = { workspace = true }
-
-[dev-dependencies]
-ic_mple_client = { workspace = true, features = ["pocket-ic"]}
-ic_mple_pocket_ic = { workspace = true }
-log = { workspace = true }
-tokio = { workspace = true }
