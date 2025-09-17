@@ -14,17 +14,11 @@ thread_local! {
     static CONFIG: RefCell<Config> = RefCell::new(Config::default());
 }
 
+#[derive(Default)]
 struct Config {
     pub other_canister: Option<Principal>,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            other_canister: None,
-        }
-    }
-}
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct InitArgs {
