@@ -16,6 +16,7 @@ ic_mple_log = { path = "src/ic_mple_log", version = "0.12.0" }
 ic_mple_permissions = { path = "src/ic_mple_permissions", version = "0.12.0" }
 ic_mple_pocket_ic = { path = "src/ic_mple_pocket_ic", version = "0.12.0" }
 ic_mple_utils = { path = "src/ic_mple_utils", version = "0.12.0" }
+test_canister = { path = "src/test_canister", version = "0.12.0" }
 
 arc-swap = "1.6"
 candid = { version = "0.10" }
