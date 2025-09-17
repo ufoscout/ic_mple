@@ -27,7 +27,7 @@ ic-agent = "0.44"
 ic-cdk = "0.18"
 ic-stable-structures = "0.7"
 log = "0.4"
-pocket-ic = "9.0.2"
+pocket-ic = "10.0"
 reqwest = { version = "0.12", default-features = false, features = [
   "gzip",
   "json",
