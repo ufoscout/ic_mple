@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use candid::{CandidType, Encode, Principal};
+use ic_mple_pocket_ic::get_pocket_ic_client;
 use ic_mple_pocket_ic::pocket_ic::nonblocking::PocketIc;
 use test_canister::InitArgs;
-use ic_mple_pocket_ic::get_pocket_ic_client;
 
 use crate::utils::wasm::get_test_canister_bytecode;
 
@@ -22,7 +22,8 @@ where
     let canister_b_args = InitArgs {
         other_canister: None,
     };
-    let canister_b_principal = deploy_canister(&client, get_test_canister_bytecode(), &canister_b_args).await;
+    let canister_b_principal =
+        deploy_canister(&client, get_test_canister_bytecode(), &canister_b_args).await;
 
     let canister_a_args = InitArgs {
         other_canister: Some(canister_b_principal),
@@ -34,7 +35,8 @@ where
         client: client.clone(),
         canister_a_principal,
         canister_b_principal,
-    }).await;
+    })
+    .await;
 
     if let Ok(client) = Arc::try_unwrap(client) {
         client.drop().await
@@ -43,10 +45,16 @@ where
     result
 }
 
-async fn deploy_canister<T: CandidType>(client: &PocketIc, bytecode: Vec<u8>, args: &T) -> Principal {
+async fn deploy_canister<T: CandidType>(
+    client: &PocketIc,
+    bytecode: Vec<u8>,
+    args: &T,
+) -> Principal {
     let args = Encode!(args).unwrap();
     let canister = client.create_canister().await;
     client.add_cycles(canister, 10_u128.pow(12)).await;
-    client.install_canister(canister, bytecode, args, None).await;
+    client
+        .install_canister(canister, bytecode, args, None)
+        .await;
     canister
 }
