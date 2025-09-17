@@ -1,3 +1,4 @@
+#![cfg(feature = "ic-agent")]
 
 use candid::Principal;
 use ic_mple_client::ic_agent::{agent::AgentBuilder, export::reqwest::Url};

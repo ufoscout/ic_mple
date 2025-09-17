@@ -19,7 +19,6 @@ struct Config {
     pub other_canister: Option<Principal>,
 }
 
-
 #[derive(Debug, Clone, CandidType, Deserialize)]
 pub struct InitArgs {
     pub other_canister: Option<Principal>,

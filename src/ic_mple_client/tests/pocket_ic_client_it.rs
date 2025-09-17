@@ -1,4 +1,5 @@
-/// Integration tests for the ic_mpl_client library
+#![cfg(feature = "pocket-ic")]
+
 use candid::Principal;
 use ic_mple_client::PocketIcClient;
 use test_canister::client::TestCanisterClient;
