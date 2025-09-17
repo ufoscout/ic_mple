@@ -1,7 +1,7 @@
 
 # Publishes all artifacts
 [group('publish')]
-publish_all: publish_utils publish_auth publish_client publish_log publish_pocket_ic
+publish_all: publish_utils publish_auth publish_pocket_ic publish_client publish_log
 
 
 # Publishes ic_mple_auth
