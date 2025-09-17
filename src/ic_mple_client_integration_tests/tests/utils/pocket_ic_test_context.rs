@@ -3,7 +3,7 @@ use std::sync::Arc;
 use candid::{CandidType, Encode, Principal};
 use ic_mple_pocket_ic::get_pocket_ic_client;
 use ic_mple_pocket_ic::pocket_ic::nonblocking::PocketIc;
-use test_canister::InitArgs;
+use ic_mple_client_integration_tests::InitArgs;
 
 use crate::utils::wasm::get_test_canister_bytecode;
 

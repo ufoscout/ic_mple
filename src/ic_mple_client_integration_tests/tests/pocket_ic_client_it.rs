@@ -1,8 +1,6 @@
-#![cfg(feature = "pocket-ic")]
-
 use candid::Principal;
 use ic_mple_client::PocketIcClient;
-use test_canister::client::TestCanisterClient;
+use ic_mple_client_integration_tests::client::TestCanisterClient;
 use utils::pocket_ic_test_context::with_pocket_ic_context;
 
 mod utils;

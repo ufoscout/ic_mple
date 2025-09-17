@@ -13,6 +13,6 @@ build:
   cargo build --all-features
 
   # build the test-canister wasm for integration tests
-  cargo build -p test_canister --target wasm32-unknown-unknown --release
+  cargo build -p ic_mple_client_integration_tests --target wasm32-unknown-unknown --release
 
 

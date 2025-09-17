@@ -5,7 +5,7 @@ use std::sync::OnceLock;
 pub fn get_test_canister_bytecode() -> Vec<u8> {
     static CANISTER_BYTECODE: OnceLock<Vec<u8>> = OnceLock::new();
     CANISTER_BYTECODE
-        .get_or_init(|| load_canister_bytecode("test_canister.wasm"))
+        .get_or_init(|| load_canister_bytecode("ic_mple_client_integration_tests.wasm"))
         .to_owned()
 }
 
