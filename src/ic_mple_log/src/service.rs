@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
 
 use crate::types::LogError;
 use crate::{LogSettings, LoggerConfigHandle, init_log};
@@ -76,24 +77,24 @@ impl From<LogServiceSettings> for LogSettings {
 
 pub type LoggerServiceStorage = StableCell<LogSettings, VirtualMemory<DefaultMemoryImpl>>;
 
+thread_local! {
+    static LOGGER_CONFIG: RefCell<Option<LoggerConfigHandle>> = const { RefCell::new(None) };
+}
+
 /// Handles the runtime logger configuration
 pub struct LoggerConfigService<S: Storage<LoggerServiceStorage>> {
-    pub logger_config: Option<LoggerConfigHandle>,
     pub log_settings_store: S,
 }
 
 impl<S: Storage<LoggerServiceStorage>> LoggerConfigService<S> {
     /// Instantiates a new LoggerConfigService
     pub fn new(log_settings_store: S) -> Self {
-        Self {
-            logger_config: None,
-            log_settings_store,
-        }
+        Self { log_settings_store }
     }
 
     /// Initialize logger. Must be called just once in the canister init and post_upgrade hook
     pub fn init(&mut self, log_settings: Option<LogServiceSettings>) -> Result<(), LogError> {
-        if self.logger_config.is_some() {
+        if LOGGER_CONFIG.with_borrow(|logger_config| logger_config.is_some()) {
             return Err(LogError::AlreadyInitialized);
         }
 
@@ -104,18 +105,20 @@ impl<S: Storage<LoggerServiceStorage>> LoggerConfigService<S> {
         }
 
         self.log_settings_store.with_borrow(|store| {
-            self.logger_config = Some(init_log(store.get())?);
-            Ok(())
+            LOGGER_CONFIG.with_borrow_mut(|logger_config| {
+                *logger_config = Some(init_log(store.get())?);
+                Ok(())
+            })
         })
     }
 
     /// Changes the logger filter at runtime
     pub fn set_logger_filter(&mut self, filter: &str) -> Result<(), LogError> {
         self.update_log_settings(filter)?;
-        match self.logger_config.as_mut() {
+        LOGGER_CONFIG.with_borrow_mut(|logger_config| match logger_config.as_mut() {
             Some(logger_config) => logger_config.update_filters(filter),
             None => Err(LogError::NotInitialized),
-        }
+        })
     }
 
     /// Returns the current logger filter
@@ -155,7 +158,6 @@ mod test {
     #[test]
     fn test_logger_config_service_with_thread_local() {
         let logger_config_service = LoggerConfigService::new(&LOG_SETTINGS_STORE);
-        assert!(logger_config_service.logger_config.is_none());
         assert_eq!(logger_config_service.get_logger_filter(), "warn");
     }
 
@@ -166,7 +168,6 @@ mod test {
             LogSettings::default(),
         ));
         let logger_config_service = LoggerConfigService::new(store);
-        assert!(logger_config_service.logger_config.is_none());
         assert_eq!(logger_config_service.get_logger_filter(), "warn");
     }
 }
