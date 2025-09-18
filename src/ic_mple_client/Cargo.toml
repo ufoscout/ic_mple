@@ -27,3 +27,4 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 ic_mple_pocket_ic = { workspace = true }
+tokio = { workspace = true }

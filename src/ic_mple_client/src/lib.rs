@@ -4,6 +4,7 @@ pub mod agent;
 pub mod client;
 pub mod error;
 pub mod ic_client;
+pub mod mock;
 
 #[cfg(feature = "pocket-ic")]
 pub mod pocket_ic;
