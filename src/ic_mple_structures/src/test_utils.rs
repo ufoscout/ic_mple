@@ -1,9 +1,14 @@
 use std::borrow::Cow;
 
 use candid::{CandidType, Decode, Deserialize, Encode};
-use ic_stable_structures::{Storable, storable::Bound};
+use ic_stable_structures::{memory_manager::MemoryManager, storable::Bound, DefaultMemoryImpl, Storable};
 
-use crate::common::codec::Codec;
+use crate::common::codec::{Codec, RefCodec};
+
+pub fn get_memory_manager() -> MemoryManager<DefaultMemoryImpl> {
+    MemoryManager::init(DefaultMemoryImpl::default())
+}
+
 
 #[derive(Clone, CandidType, Deserialize, PartialEq, Eq, Debug)]
 pub enum VersionedUser {
@@ -65,13 +70,30 @@ impl Storable for UserV2 {
     }
 
     fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), UserV2).unwrap()
+        Decode!(bytes.as_ref(), Self).unwrap()
     }
 }
 
 pub struct UserCodec;
 
 impl Codec<VersionedUser, UserV2> for UserCodec {
+
+    fn decode(&self, source: VersionedUser) -> UserV2 {
+        match source {
+            VersionedUser::V1(user_v1) => UserV2 {
+                name: user_v1.0,
+                age: None
+            },
+            VersionedUser::V2(user_v2) => user_v2,
+        }
+    }
+
+    fn encode(&self, dest: UserV2) -> VersionedUser {
+        VersionedUser::V2(dest)
+    }
+}
+
+impl RefCodec<VersionedUser, UserV2> for UserCodec {
 
     fn decode_ref<'a>(&self, source: &'a VersionedUser) -> std::borrow::Cow<'a, UserV2> {
         match source {
@@ -85,5 +107,55 @@ impl Codec<VersionedUser, UserV2> for UserCodec {
 
     fn encode(&self, dest: UserV2) -> VersionedUser {
         VersionedUser::V2(dest)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, CandidType, Deserialize)]
+pub struct StringValue(pub String);
+
+impl Storable for StringValue {
+    const BOUND: Bound = Bound::Unbounded;
+
+    fn to_bytes(&self) -> std::borrow::Cow<'_, [u8]> {
+        Encode!(&self).unwrap().into()
+    }
+
+    fn into_bytes(self) -> Vec<u8> {
+        Encode!(&self).unwrap()
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+}
+
+pub fn str_val(len: usize) -> StringValue {
+    let mut s = String::with_capacity(len);
+    s.extend((0..len).map(|_| 'Q'));
+    StringValue(s)
+}
+
+/// New type pattern used to implement `Storable` trait for all arrays.
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+pub struct Array<const N: usize>(pub [u8; N]);
+
+impl<const N: usize> Storable for Array<N> {
+    const BOUND: Bound = Bound::Bounded {
+        max_size: N as u32,
+        is_fixed_size: true,
+    };
+
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(self.0.to_vec())
+    }
+
+    fn from_bytes(bytes: Cow<'_, [u8]>) -> Self {
+        let mut buf = [0u8; N];
+        buf.copy_from_slice(&bytes);
+        Array(buf)
+    }
+    
+    fn into_bytes(self) -> Vec<u8> {
+        self.0.to_vec()
     }
 }

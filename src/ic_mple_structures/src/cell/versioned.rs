@@ -2,20 +2,20 @@ use std::borrow::Cow;
 
 use ic_stable_structures::{Memory, StableCell, Storable};
 
-use crate::{cell::CellStructure, common::codec::Codec};
+use crate::{cell::CellStructure, common::codec::RefCodec};
 
 /// A versioned stable cell.
-pub struct VersionedStableCell<T: Storable, M: Memory, C: Codec<T, D>, D: Clone> {
-    cell: StableCell<T, M>,
+pub struct VersionedStableCell<T: Storable, M: Memory, C: RefCodec<T, D>, D: Clone> {
+    inner: StableCell<T, M>,
     codec: C,
     phantom_d: std::marker::PhantomData<D>,
 }
 
-impl<T: Storable, M: Memory, C: Codec<T, D>, D: Clone> VersionedStableCell<T, M, C, D> {
+impl<T: Storable, M: Memory, C: RefCodec<T, D>, D: Clone> VersionedStableCell<T, M, C, D> {
 
     pub fn new(cell: StableCell<T, M>, codec: C) -> Self {
         Self {
-            cell,
+            inner: cell,
             codec,
             phantom_d: std::marker::PhantomData,
         }
@@ -23,14 +23,14 @@ impl<T: Storable, M: Memory, C: Codec<T, D>, D: Clone> VersionedStableCell<T, M,
 
 }
 
-impl<T: Storable, M: Memory, C: Codec<T, D>, D: Clone> CellStructure<D> for VersionedStableCell<T, M, C, D> {
+impl<T: Storable, M: Memory, C: RefCodec<T, D>, D: Clone> CellStructure<D> for VersionedStableCell<T, M, C, D> {
 
     fn get(&self) -> Cow<'_, D> {
-        self.codec.decode_ref(self.cell.get())        
+        self.codec.decode_ref(self.inner.get())        
     }
 
     fn set(&mut self, value: D) {
-        self.cell.set(self.codec.encode(value));
+        self.inner.set(self.codec.encode(value));
     }
 
 }
@@ -39,14 +39,14 @@ impl<T: Storable, M: Memory, C: Codec<T, D>, D: Clone> CellStructure<D> for Vers
 mod tests {
     use ic_stable_structures::{memory_manager::{MemoryId, MemoryManager}, DefaultMemoryImpl};
 
-    use crate::test_utils::{UserCodec, UserV1, UserV2, VersionedUser};
+    use crate::test_utils::{get_memory_manager, UserCodec, UserV1, UserV2, VersionedUser};
 
     use super::*;
     
     #[test]
     fn cell_should_use_user_codec() {
         // Arrange
-        let memory = MemoryManager::init(DefaultMemoryImpl::default()).get(MemoryId::new(1));
+        let memory = get_memory_manager().get(MemoryId::new(1));
         let mut cell = StableCell::new(memory, VersionedUser::V1(UserV1("test".to_string())));
         cell.set(VersionedUser::V1(UserV1("test2".to_string())));
 
