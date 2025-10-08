@@ -11,6 +11,11 @@ keywords = ["IC", "internet-computer", "stable-structures"]
 
 [dependencies]
 ic-stable-structures = { workspace = true }
+schnellru = { workspace = true, optional = true }
+
+[features]
+default = []
+cached = ["schnellru"]
 
 [dev-dependencies]
 candid = { workspace = true }
