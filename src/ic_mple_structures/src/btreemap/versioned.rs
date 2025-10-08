@@ -1,25 +1,25 @@
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::{btreemap::{BTreeMapStructure}, common::codec::Codec};
+use crate::{btreemap::BTreeMapStructure, common::codec::Codec};
 
 /// A versioned BTreeMap.
-pub struct VersionedBTreeMap<K, V, D: Clone, M, C: Codec<V, D>> 
+pub struct VersionedBTreeMap<K, V, D: Clone, M, C: Codec<V, D>>
 where
     K: Storable + Ord + Clone,
     V: Storable,
-    M: Memory, {
+    M: Memory,
+{
     inner: BTreeMap<K, V, M>,
     codec: C,
     phantom_d: std::marker::PhantomData<D>,
 }
 
-impl<K, V, D: Clone, M, C: Codec<V, D>> VersionedBTreeMap<K, V, D, M, C> 
+impl<K, V, D: Clone, M, C: Codec<V, D>> VersionedBTreeMap<K, V, D, M, C>
 where
     K: Storable + Ord + Clone,
     V: Storable,
     M: Memory,
-    {
-
+{
     /// Create new instance of the VersionedBTreeMap.
     pub fn new(memory: M, codec: C) -> Self {
         Self::with_map(BTreeMap::new(memory), codec)
@@ -33,54 +33,64 @@ where
             phantom_d: std::marker::PhantomData,
         }
     }
-
 }
 
-impl<K, V, D: Clone, M, C: Codec<V, D>> BTreeMapStructure<K,D> for VersionedBTreeMap<K, V, D, M, C> 
+impl<K, V, D: Clone, M, C: Codec<V, D>> BTreeMapStructure<K, D> for VersionedBTreeMap<K, V, D, M, C>
 where
     K: Storable + Ord + Clone,
     V: Storable,
-    M: Memory, {
-        fn get(&self, key: &K) -> Option<D> {
+    M: Memory,
+{
+    fn get(&self, key: &K) -> Option<D> {
         self.inner.get(key).map(|v| self.codec.decode(v))
     }
-    
+
     fn insert(&mut self, key: K, value: D) -> Option<D> {
-        self.inner.insert(key, self.codec.encode(value)).map(|v| self.codec.decode(v))
+        self.inner
+            .insert(key, self.codec.encode(value))
+            .map(|v| self.codec.decode(v))
     }
-    
+
     fn remove(&mut self, key: &K) -> Option<D> {
         self.inner.remove(key).map(|v| self.codec.decode(v))
     }
-    
+
     fn pop_first(&mut self) -> Option<(K, D)> {
-        self.inner.pop_first().map(|(k, v)| (k, self.codec.decode(v)))
+        self.inner
+            .pop_first()
+            .map(|(k, v)| (k, self.codec.decode(v)))
     }
-    
+
     fn pop_last(&mut self) -> Option<(K, D)> {
-        self.inner.pop_last().map(|(k, v)| (k, self.codec.decode(v)))
+        self.inner
+            .pop_last()
+            .map(|(k, v)| (k, self.codec.decode(v)))
     }
-    
+
     fn contains_key(&self, key: &K) -> bool {
         self.inner.contains_key(key)
     }
-    
+
     fn first_key_value(&self) -> Option<(K, D)> {
-        self.inner.first_key_value().map(|(k, v)| (k.clone(), self.codec.decode(v)))
+        self.inner
+            .first_key_value()
+            .map(|(k, v)| (k.clone(), self.codec.decode(v)))
     }
-    
+
     fn last_key_value(&self) -> Option<(K, D)> {
-        self.inner.last_key_value().map(|(k, v)| (k.clone(), self.codec.decode(v)))
+        self.inner
+            .last_key_value()
+            .map(|(k, v)| (k.clone(), self.codec.decode(v)))
     }
-    
+
     fn len(&self) -> u64 {
         self.inner.len()
     }
-    
+
     fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
-    
+
     fn clear(&mut self) {
         self.inner.clear_new()
     }
@@ -91,7 +101,10 @@ mod tests {
 
     use ic_stable_structures::VectorMemory;
 
-    use crate::{common::codec::DefaultCodec, test_utils::{Array, UserCodec, UserV1, UserV2, VersionedUser}};
+    use crate::{
+        common::codec::DefaultCodec,
+        test_utils::{Array, UserCodec, UserV1, UserV2, VersionedUser},
+    };
 
     use super::*;
 
@@ -102,37 +115,54 @@ mod tests {
 
         // The map contains 3 users of different versions
         btree_map.insert(1u32, VersionedUser::V1(UserV1("roger".to_string())));
-        btree_map.insert(2, VersionedUser::V2(UserV2{
-            name: "brian".to_string(),
-            age: Some(42)
-        }));
+        btree_map.insert(
+            2,
+            VersionedUser::V2(UserV2 {
+                name: "brian".to_string(),
+                age: Some(42),
+            }),
+        );
         btree_map.insert(3, VersionedUser::V1(UserV1("freddie".to_string())));
 
         // The map contains 3 users of different versions but VersionedBTreeMap only uses UserV2
         let mut version_map = VersionedBTreeMap::with_map(btree_map, UserCodec);
-        version_map.insert(1u32, UserV2{
-            name: "John".to_string(),
-            age: Some(24)
-        });
+        version_map.insert(
+            1u32,
+            UserV2 {
+                name: "John".to_string(),
+                age: Some(24),
+            },
+        );
 
-        assert_eq!(version_map.get(&1), Some(UserV2{
-            name: "John".to_string(),
-            age: Some(24)
-        }));
-        assert_eq!(version_map.get(&2), Some(UserV2{
-            name: "brian".to_string(),
-            age: Some(42)
-        }));
-        assert_eq!(version_map.get(&3), Some(UserV2{
-            name: "freddie".to_string(),
-            age: None
-        }));
+        assert_eq!(
+            version_map.get(&1),
+            Some(UserV2 {
+                name: "John".to_string(),
+                age: Some(24)
+            })
+        );
+        assert_eq!(
+            version_map.get(&2),
+            Some(UserV2 {
+                name: "brian".to_string(),
+                age: Some(42)
+            })
+        );
+        assert_eq!(
+            version_map.get(&3),
+            Some(UserV2 {
+                name: "freddie".to_string(),
+                age: None
+            })
+        );
     }
 
     #[test]
     fn should_get_and_insert() {
-        let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
 
         assert!(map.is_empty());
 
@@ -207,8 +237,10 @@ mod tests {
 
     #[test]
     fn should_clear() {
-        let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
         assert_eq!(None, map.insert(3, Array([3u8, 1])));
@@ -226,8 +258,7 @@ mod tests {
 
     #[test]
     fn test_should_pop_first() {
-        let mut map =
-            VersionedBTreeMap::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::new(VectorMemory::default(), DefaultCodec::default());
 
         map.insert(0u32, 42u32);
         map.insert(10, 100);
@@ -242,8 +273,7 @@ mod tests {
 
     #[test]
     fn test_should_pop_last() {
-        let mut map =
-            VersionedBTreeMap::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::new(VectorMemory::default(), DefaultCodec::default());
 
         map.insert(0u32, 42u32);
         map.insert(10, 100);
@@ -257,8 +287,10 @@ mod tests {
 
     #[test]
     fn should_replace_old_value() {
-                let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -325,8 +357,7 @@ mod tests {
 
     #[test]
     fn test_last_key_value() {
-                let mut map =
-            VersionedBTreeMap::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::new(VectorMemory::default(), DefaultCodec::default());
 
         assert!(map.is_empty());
 
@@ -347,8 +378,10 @@ mod tests {
 
     #[test]
     fn should_get_and_insert_from_existing_map() {
-                let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
 
         map.inner.insert(1, Array([1u8, 1]));
         map.inner.insert(2, Array([2u8, 1]));

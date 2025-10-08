@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use candid::{CandidType, Decode, Deserialize, Encode};
-use ic_stable_structures::{storable::Bound, Storable};
+use ic_stable_structures::{Storable, storable::Bound};
 
 use crate::common::codec::{Codec, RefCodec};
 
@@ -12,7 +12,6 @@ pub enum VersionedUser {
 }
 
 impl Storable for VersionedUser {
-
     const BOUND: Bound = Bound::Unbounded;
 
     fn to_bytes(&self) -> Cow<'_, [u8]> {
@@ -72,12 +71,11 @@ impl Storable for UserV2 {
 pub struct UserCodec;
 
 impl Codec<VersionedUser, UserV2> for UserCodec {
-
     fn decode(&self, source: VersionedUser) -> UserV2 {
         match source {
             VersionedUser::V1(user_v1) => UserV2 {
                 name: user_v1.0,
-                age: None
+                age: None,
             },
             VersionedUser::V2(user_v2) => user_v2,
         }
@@ -89,12 +87,11 @@ impl Codec<VersionedUser, UserV2> for UserCodec {
 }
 
 impl RefCodec<VersionedUser, UserV2> for UserCodec {
-
     fn decode_ref<'a>(&self, source: &'a VersionedUser) -> std::borrow::Cow<'a, UserV2> {
         match source {
             VersionedUser::V1(user_v1) => Cow::Owned(UserV2 {
                 name: user_v1.0.clone(),
-                age: None
+                age: None,
             }),
             VersionedUser::V2(user_v2) => Cow::Borrowed(user_v2),
         }
@@ -149,7 +146,7 @@ impl<const N: usize> Storable for Array<N> {
         buf.copy_from_slice(&bytes);
         Array(buf)
     }
-    
+
     fn into_bytes(self) -> Vec<u8> {
         self.0.to_vec()
     }

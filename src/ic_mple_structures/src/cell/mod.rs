@@ -12,8 +12,7 @@ pub trait CellStructure<T: Clone> {
     fn set(&mut self, value: T);
 }
 
-
-impl <T: Storable + Clone, M: Memory> CellStructure<T> for StableCell<T, M> {
+impl<T: Storable + Clone, M: Memory> CellStructure<T> for StableCell<T, M> {
     fn get(&self) -> Cow<'_, T> {
         Cow::Borrowed(self.get())
     }

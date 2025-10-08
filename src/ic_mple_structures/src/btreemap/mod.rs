@@ -1,6 +1,6 @@
 use std::ops::RangeBounds;
 
-use ic_stable_structures::{btreemap, BTreeMap, Memory, Storable};
+use ic_stable_structures::{BTreeMap, Memory, Storable, btreemap};
 
 pub mod versioned;
 
@@ -44,7 +44,6 @@ pub trait BTreeMapStructure<K, V> {
 
     /// Remove all entries from the map.
     fn clear(&mut self);
-
 }
 
 /// Map that supports ordered iterator
