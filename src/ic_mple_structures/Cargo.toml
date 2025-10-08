@@ -1,0 +1,17 @@
+[package]
+name = "ic_mple_structures"
+description = "High level structure based on ic-stable-structures"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["IC", "internet-computer", "stable-structures"]
+
+[dependencies]
+ic-stable-structures = { workspace = true }
+
+[dev-dependencies]
+candid = { workspace = true }
+serde = { workspace = true }
