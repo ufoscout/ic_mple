@@ -2,7 +2,7 @@ use std::{hash::Hash, ops::RangeBounds};
 
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::btreemap::{lru::SyncLruCache, BTreeMapIteratorStructure, BTreeMapStructure};
+use crate::btreemap::{BTreeMapIteratorStructure, BTreeMapStructure, lru::SyncLruCache};
 
 /// A LRU Cache for BTreeMap
 pub struct CachedBTreeMap<K, V, M>
@@ -139,8 +139,7 @@ mod tests {
     #[test]
     fn should_get_and_insert() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         assert!(map.is_empty());
 
@@ -216,8 +215,7 @@ mod tests {
     #[test]
     fn should_clear() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -266,8 +264,7 @@ mod tests {
     #[test]
     fn should_replace_old_value() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -288,41 +285,53 @@ mod tests {
     #[test]
     fn should_iterate() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
         assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
         let mut iter = map.iter();
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((1, Array([1u8, 1]))));
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((2, Array([2u8, 1]))));
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((3, Array([3u8, 1]))));
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((1, Array([1u8, 1])))
+        );
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((2, Array([2u8, 1])))
+        );
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((3, Array([3u8, 1])))
+        );
         assert_eq!(iter.next().map(|v| v.into_pair()), None);
     }
 
     #[test]
     fn should_iterate_over_range() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
         assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
         let mut iter = map.range(2..5);
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((2, Array([2u8, 1]))));
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((3, Array([3u8, 1]))));
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((2, Array([2u8, 1])))
+        );
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((3, Array([3u8, 1])))
+        );
         assert_eq!(iter.next().map(|v| v.into_pair()), None);
     }
 
     #[test]
     fn should_iterate_upper_bound() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -330,16 +339,21 @@ mod tests {
 
         let mut iter = map.iter_from_prev_key(&3);
 
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((2, Array([2u8, 1]))));
-        assert_eq!(iter.next().map(|v| v.into_pair()), Some((3, Array([3u8, 1]))));
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((2, Array([2u8, 1])))
+        );
+        assert_eq!(
+            iter.next().map(|v| v.into_pair()),
+            Some((3, Array([3u8, 1])))
+        );
         assert_eq!(iter.next().map(|v| v.into_pair()), None);
     }
 
     #[test]
     fn test_last_key_value() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, u32, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, u32, _>::new(VectorMemory::default(), cache_items);
         assert!(map.is_empty());
 
         assert!(map.last_key_value().is_none());
@@ -360,8 +374,7 @@ mod tests {
     #[test]
     fn should_get_and_insert_from_existing_map() {
         let cache_items = 2;
-        let mut map =
-            CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
+        let mut map = CachedBTreeMap::<u32, Array<2>, _>::new(VectorMemory::default(), cache_items);
 
         map.inner.insert(1, Array([1u8, 1]));
         map.inner.insert(2, Array([2u8, 1]));

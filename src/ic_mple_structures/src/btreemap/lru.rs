@@ -1,5 +1,5 @@
-use std::{cell::RefCell, convert::Infallible};
 use std::hash::Hash;
+use std::{cell::RefCell, convert::Infallible};
 
 use schnellru::{ByLength, LruMap};
 
