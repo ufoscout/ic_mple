@@ -1,14 +1,9 @@
 use std::borrow::Cow;
 
 use candid::{CandidType, Decode, Deserialize, Encode};
-use ic_stable_structures::{memory_manager::MemoryManager, storable::Bound, DefaultMemoryImpl, Storable};
+use ic_stable_structures::{storable::Bound, Storable};
 
 use crate::common::codec::{Codec, RefCodec};
-
-pub fn get_memory_manager() -> MemoryManager<DefaultMemoryImpl> {
-    MemoryManager::init(DefaultMemoryImpl::default())
-}
-
 
 #[derive(Clone, CandidType, Deserialize, PartialEq, Eq, Debug)]
 pub enum VersionedUser {

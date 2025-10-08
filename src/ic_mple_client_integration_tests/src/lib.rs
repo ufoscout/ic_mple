@@ -35,7 +35,7 @@ fn init(arg: InitArgs) {
 
 #[query]
 fn get_counter() -> u64 {
-    COUNTER.with(|c| (*c.borrow()))
+    COUNTER.with(|c| *c.borrow())
 }
 
 #[update]

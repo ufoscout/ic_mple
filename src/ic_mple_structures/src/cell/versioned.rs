@@ -37,17 +37,16 @@ impl<T: Storable, M: Memory, C: RefCodec<T, D>, D: Clone> CellStructure<D> for V
 
 #[cfg(test)]
 mod tests {
-    use ic_stable_structures::{memory_manager::{MemoryId, MemoryManager}, DefaultMemoryImpl};
+    use ic_stable_structures::{VectorMemory};
 
-    use crate::test_utils::{get_memory_manager, UserCodec, UserV1, UserV2, VersionedUser};
+    use crate::test_utils::{UserCodec, UserV1, UserV2, VersionedUser};
 
     use super::*;
     
     #[test]
     fn cell_should_use_user_codec() {
         // Arrange
-        let memory = get_memory_manager().get(MemoryId::new(1));
-        let mut cell = StableCell::new(memory, VersionedUser::V1(UserV1("test".to_string())));
+        let mut cell = StableCell::new(VectorMemory::default(), VersionedUser::V1(UserV1("test".to_string())));
         cell.set(VersionedUser::V1(UserV1("test2".to_string())));
 
         let mut versioned_cell = VersionedStableCell::new(cell, UserCodec);
