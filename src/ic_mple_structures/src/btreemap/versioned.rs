@@ -1,6 +1,8 @@
+use std::{hash::Hash, ops::RangeBounds};
+
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::{btreemap::BTreeMapStructure, common::Codec};
+use crate::{btreemap::BTreeMapStructure, common::Codec, BTreeMapIter, BTreeMapIteratorStructure};
 
 /// A versioned BTreeMap.
 pub struct VersionedBTreeMap<K, V, D: Clone, M, C: Codec<V, D>>
@@ -93,6 +95,30 @@ where
 
     fn clear(&mut self) {
         self.inner.clear_new()
+    }
+}
+
+impl<K, V, D: Clone, M, C: Codec<V, D>> BTreeMapIteratorStructure<K, V> for VersionedBTreeMap<K, V, D, M, C>
+where
+    K: Storable + Clone + Send + Sync + Hash + Eq + PartialEq + Ord,
+    V: Storable + Clone + Send + Sync,
+    M: Memory,
+{
+    type Iterator<'a>
+        = BTreeMapIter<'a, K, V, M>
+    where
+        Self: 'a;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        BTreeMapIteratorStructure::iter(&self.inner)
+    }
+
+    fn range(&self, key_range: impl RangeBounds<K>) -> Self::Iterator<'_> {
+        BTreeMapIteratorStructure::range(&self.inner, key_range)
+    }
+
+    fn iter_from_prev_key(&self, bound: &K) -> Self::Iterator<'_> {
+        BTreeMapIteratorStructure::iter_from_prev_key(&self.inner, bound)
     }
 }
 
@@ -308,52 +334,51 @@ mod tests {
         assert_eq!(Some(Array([3u8, 10])), map.get(&3));
     }
 
-    // #[test]
-    // fn should_iterate() {
-    //             let mut map =
-    //         VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+    #[test]
+    fn should_iterate() {
+                let mut map =
+            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
 
-    //     assert_eq!(None, map.insert(1, Array([1u8, 1])));
-    //     assert_eq!(None, map.insert(2, Array([2u8, 1])));
-    //     assert_eq!(None, map.insert(3, Array([3u8, 1])));
+        assert_eq!(None, map.insert(1, Array([1u8, 1])));
+        assert_eq!(None, map.insert(2, Array([2u8, 1])));
+        assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
-    //     let mut iter = map.iter();
-    //     assert_eq!(iter.next(), Some((1, Array([1u8, 1]))));
-    //     assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
-    //     assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
-    //     assert_eq!(iter.next(), None);
-    // }
+        let mut iter = map.iter();
+        assert_eq!(iter.next(), Some((1, Array([1u8, 1]))));
+        assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
+        assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
+        assert_eq!(iter.next(), None);
+    }
 
-    // #[test]
-    // fn should_iterate_over_range() {
-    //             let mut map =
-    //         VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+    #[test]
+    fn should_iterate_over_range() {
+                let mut map =
+            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
 
-    //     assert_eq!(None, map.insert(1, Array([1u8, 1])));
-    //     assert_eq!(None, map.insert(2, Array([2u8, 1])));
-    //     assert_eq!(None, map.insert(3, Array([3u8, 1])));
+        assert_eq!(None, map.insert(1, Array([1u8, 1])));
+        assert_eq!(None, map.insert(2, Array([2u8, 1])));
+        assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
-    //     let mut iter = map.range(2..5);
-    //     assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
-    //     assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
-    //     assert_eq!(iter.next(), None);
-    // }
+        let mut iter = map.range(2..5);
+        assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
+        assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
+        assert_eq!(iter.next(), None);
+    }
 
-    // #[test]
-    // fn should_iterate_upper_bound() {
-    //     let cache_items = 2;
-    //             let mut map =
-    //         VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+    #[test]
+    fn should_iterate_upper_bound() {
+                let mut map =
+            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
 
-    //     assert_eq!(None, map.insert(1, Array([1u8, 1])));
-    //     assert_eq!(None, map.insert(2, Array([2u8, 1])));
-    //     assert_eq!(None, map.insert(3, Array([3u8, 1])));
+        assert_eq!(None, map.insert(1, Array([1u8, 1])));
+        assert_eq!(None, map.insert(2, Array([2u8, 1])));
+        assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
-    //     let mut iter = map.iter_upper_bound(&3);
-    //     assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
-    //     assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
-    //     assert_eq!(iter.next(), None);
-    // }
+        let mut iter = map.iter_from_prev_key(&3);
+        assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
+        assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
+        assert_eq!(iter.next(), None);
+    }
 
     #[test]
     fn test_last_key_value() {

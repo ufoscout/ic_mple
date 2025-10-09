@@ -6,6 +6,7 @@ use ic_stable_structures::{BTreeMap, Memory, Storable, btreemap};
 mod cached;
 mod versioned;
 
+#[cfg(feature = "cached")]
 pub use cached::CachedBTreeMap;
 pub use versioned::VersionedBTreeMap;
 
@@ -54,7 +55,7 @@ pub trait BTreeMapStructure<K, V> {
 /// Map that supports ordered iterator
 pub trait BTreeMapIteratorStructure<K, V> {
     /// Map iterator type
-    type Iterator<'a>: Iterator
+    type Iterator<'a>: Iterator<Item = (K, V)>
     where
         Self: 'a;
 
@@ -132,19 +133,38 @@ where
     M: Memory,
 {
     type Iterator<'a>
-        = btreemap::Iter<'a, K, V, M>
+        = BTreeMapIter<'a, K, V, M>
     where
         Self: 'a;
 
     fn iter(&self) -> Self::Iterator<'_> {
-        self.iter()
+        BTreeMapIter(self.iter())
     }
 
     fn range(&self, key_range: impl RangeBounds<K>) -> Self::Iterator<'_> {
-        self.range(key_range)
+        BTreeMapIter(self.range(key_range))
     }
 
     fn iter_from_prev_key(&self, bound: &K) -> Self::Iterator<'_> {
-        self.iter_from_prev_key(bound)
+        BTreeMapIter(self.iter_from_prev_key(bound))
+    }
+}
+
+pub struct BTreeMapIter<'a, K, V, M>(btreemap::Iter<'a, K, V, M>)
+where
+    K: Storable + Ord + Clone,
+    V: Storable,
+    M: Memory;
+
+impl<K, V, M> Iterator for BTreeMapIter<'_, K, V, M>
+where
+    K: Storable + Ord + Clone,
+    V: Storable,
+    M: Memory,
+{
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<(K, V)> {
+        self.0.next().map(|entry| entry.into_pair())
     }
 }

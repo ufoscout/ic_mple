@@ -4,7 +4,7 @@ use ic_stable_structures::{BTreeMap, Memory, Storable};
 
 use crate::{
     btreemap::{BTreeMapIteratorStructure, BTreeMapStructure},
-    common::LruCache,
+    common::LruCache, BTreeMapIter,
 };
 
 /// A LRU Cache for BTreeMap
@@ -115,20 +115,20 @@ where
     M: Memory,
 {
     type Iterator<'a>
-        = ic_stable_structures::btreemap::Iter<'a, K, V, M>
+        = BTreeMapIter<'a, K, V, M>
     where
         Self: 'a;
 
     fn iter(&self) -> Self::Iterator<'_> {
-        self.inner.iter()
+        BTreeMapIteratorStructure::iter(&self.inner)
     }
 
     fn range(&self, key_range: impl RangeBounds<K>) -> Self::Iterator<'_> {
-        self.inner.range(key_range)
+        BTreeMapIteratorStructure::range(&self.inner, key_range)
     }
 
     fn iter_from_prev_key(&self, bound: &K) -> Self::Iterator<'_> {
-        self.inner.iter_from_prev_key(bound)
+        BTreeMapIteratorStructure::iter_from_prev_key(&self.inner, bound)
     }
 }
 
@@ -296,18 +296,18 @@ mod tests {
 
         let mut iter = map.iter();
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((1, Array([1u8, 1])))
         );
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((2, Array([2u8, 1])))
         );
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((3, Array([3u8, 1])))
         );
-        assert_eq!(iter.next().map(|v| v.into_pair()), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -321,14 +321,14 @@ mod tests {
 
         let mut iter = map.range(2..5);
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((2, Array([2u8, 1])))
         );
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((3, Array([3u8, 1])))
         );
-        assert_eq!(iter.next().map(|v| v.into_pair()), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -343,14 +343,14 @@ mod tests {
         let mut iter = map.iter_from_prev_key(&3);
 
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((2, Array([2u8, 1])))
         );
         assert_eq!(
-            iter.next().map(|v| v.into_pair()),
+            iter.next(),
             Some((3, Array([3u8, 1])))
         );
-        assert_eq!(iter.next().map(|v| v.into_pair()), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
