@@ -3,7 +3,7 @@ use std::mem::size_of;
 use std::num::NonZeroU64;
 
 use ic_stable_structures::storable::Bound;
-use ic_stable_structures::{Memory, Storable, Cell as StableCell, Vec as StableVec};
+use ic_stable_structures::{Cell as StableCell, Memory, Storable, Vec as StableVec};
 
 use crate::vec::VecStructure;
 
@@ -107,7 +107,7 @@ impl Storable for StableRingBufferIndices {
             ),
         }
     }
-    
+
     fn into_bytes(self) -> Vec<u8> {
         self.to_bytes().into()
     }
@@ -144,7 +144,10 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
         data: StableVec<T, DataMemory>,
         indices: StableCell<StableRingBufferIndices, IndicesMemory>,
     ) -> Self {
-        Self { data: Some(data), indices }
+        Self {
+            data: Some(data),
+            indices,
+        }
     }
 
     /// Removes all elements in the buffer
@@ -283,8 +286,7 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
     ) -> R {
         let mut indices = self.indices.get().clone();
         let result = f(&mut indices, &mut self.data);
-        self.indices
-            .set(indices);
+        self.indices.set(indices);
         result
     }
 }

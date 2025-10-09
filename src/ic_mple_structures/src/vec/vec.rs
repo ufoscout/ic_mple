@@ -2,7 +2,6 @@ use ic_stable_structures::{Memory, Storable, Vec};
 
 use crate::vec::VecStructure;
 
-
 impl<T: Storable, M: Memory> VecStructure<T> for Option<Vec<T, M>> {
     fn is_empty(&self) -> bool {
         get_inner(self).is_empty()
@@ -37,11 +36,11 @@ impl<T: Storable, M: Memory> VecStructure<T> for Option<Vec<T, M>> {
 }
 
 #[inline(always)]
-    fn get_inner<T: Storable, M: Memory>(v: &Option<Vec<T, M>>) -> &Vec<T, M> {
-        v.as_ref().expect("vector is always initialized")
-    }
+fn get_inner<T: Storable, M: Memory>(v: &Option<Vec<T, M>>) -> &Vec<T, M> {
+    v.as_ref().expect("vector is always initialized")
+}
 
-    #[inline(always)]
-    fn mut_inner<T: Storable, M: Memory>(v: &mut Option<Vec<T, M>>) -> &mut Vec<T, M> {
-        v.as_mut().expect("vector is always initialized")
-    }
+#[inline(always)]
+fn mut_inner<T: Storable, M: Memory>(v: &mut Option<Vec<T, M>>) -> &mut Vec<T, M> {
+    v.as_mut().expect("vector is always initialized")
+}

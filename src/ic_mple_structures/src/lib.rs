@@ -2,7 +2,7 @@ pub mod btreemap;
 pub mod cell;
 pub mod common;
 pub mod ringbuffer;
-pub mod vec; 
+pub mod vec;
 
 #[cfg(test)]
 pub mod test_utils;
