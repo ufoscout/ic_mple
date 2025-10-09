@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use candid::{CandidType, Decode, Deserialize, Encode};
 use ic_stable_structures::{Storable, storable::Bound};
 
-use crate::common::codec::{Codec, RefCodec};
+use crate::common::{bound::Bounded, codec::{Codec, RefCodec}};
 
 #[derive(Clone, CandidType, Deserialize, PartialEq, Eq, Debug)]
 pub enum VersionedUser {
@@ -130,6 +130,12 @@ pub fn str_val(len: usize) -> StringValue {
 /// New type pattern used to implement `Storable` trait for all arrays.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub struct Array<const N: usize>(pub [u8; N]);
+
+/// Implement `Bounded` for all arrays.
+impl<const N: usize> Bounded for Array<N> {
+    const MIN: Array<N> = Array([0; N]);
+    const MAX: Array<N> = Array([u8::MAX; N]);
+}
 
 impl<const N: usize> Storable for Array<N> {
     const BOUND: Bound = Bound::Bounded {

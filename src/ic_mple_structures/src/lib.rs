@@ -2,6 +2,7 @@ pub mod btreemap;
 pub mod cell;
 pub mod common;
 pub mod log;
+pub mod multimap;
 pub mod ringbuffer;
 pub mod vec;
 

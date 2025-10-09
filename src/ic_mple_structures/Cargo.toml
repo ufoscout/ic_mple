@@ -10,6 +10,7 @@ authors.workspace = true
 keywords = ["IC", "internet-computer", "stable-structures"]
 
 [dependencies]
+candid = { workspace = true }
 ic-stable-structures = { workspace = true }
 schnellru = { workspace = true, optional = true }
 
