@@ -16,16 +16,19 @@ pub struct TokioIcApi {
 
 impl Default for TokioIcApi {
     fn default() -> Self {
-        Self { 
-            canister_id: Principal::anonymous(), 
-            canister_cycle_balance: Default::default() 
+        Self {
+            canister_id: Principal::anonymous(),
+            canister_cycle_balance: Default::default(),
         }
     }
 }
 
 impl TokioIcApi {
     pub fn new(canister_id: Principal, canister_cycle_balance: u128) -> Self {
-        Self { canister_id, canister_cycle_balance }
+        Self {
+            canister_id,
+            canister_cycle_balance,
+        }
     }
 
     /// Sets the Principal of the canister to use when interacting with the IC API.
@@ -33,7 +36,6 @@ impl TokioIcApi {
         self.canister_id = canister_id;
     }
 
-    
     /// Sets the current cycle balance of the canister.
     pub fn set_canister_cycle_balance(&mut self, canister_cycle_balance: u128) {
         self.canister_cycle_balance = canister_cycle_balance;
@@ -51,16 +53,16 @@ impl IcTrait for TokioIcApi {
 
     fn time_ns(&self) -> u64 {
         self.current_system_time()
-    .duration_since(std::time::SystemTime::UNIX_EPOCH)
-    .expect("get current timestamp error")
-    .as_secs()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .expect("get current timestamp error")
+            .as_secs()
     }
 
     fn time_secs(&self) -> u64 {
         self.current_system_time()
-        .duration_since(std::time::SystemTime::UNIX_EPOCH)
-        .expect("get current timestamp error")
-        .as_nanos() as u64
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .expect("get current timestamp error")
+            .as_nanos() as u64
     }
 
     fn current_system_time(&self) -> std::time::SystemTime {

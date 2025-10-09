@@ -18,8 +18,8 @@ impl<T: Storable, M: Memory> LogExt<T, M> {
     }
 
     /// Create new storage for values with `T` type.
-    /// 
-            /// PRECONDITION: the memories are either empty or contain valid
+    ///
+    /// PRECONDITION: the memories are either empty or contain valid
     /// log data.
     pub fn init(index_memory: M, data_memory: M) -> Self {
         Self(Some(log::Log::init(index_memory, data_memory)))

@@ -1,15 +1,15 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
-use ic_mple_structures::{BTreeMapStructure, CellStructure, BTreeMapIteratorStructure};
+use ic_mple_structures::{BTreeMapIteratorStructure, BTreeMapStructure, CellStructure};
 use log::{debug, warn};
 use parking_lot::Mutex;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
+use crate::SchedulerError;
 use crate::task::{InnerScheduledTask, ScheduledTask, Task, TaskOptions, TaskStatus};
 use crate::time::time_secs;
-use crate::SchedulerError;
 
 type TaskCompletionCallback<T> = Box<dyn 'static + Fn(InnerScheduledTask<T>) + Send>;
 
@@ -141,15 +141,15 @@ where
         {
             let mut lock = task_scheduler.pending_tasks.lock();
             let task = lock.get(&task_key);
-            if let Some(mut task) = task {
-                if let TaskStatus::Waiting { .. } = task.status {
-                    debug!(
-                        "Scheduler - Task {} status changed: Waiting -> Scheduled",
-                        task_key
-                    );
-                    task.status = TaskStatus::scheduled(now_timestamp_secs);
-                    lock.insert(task_key, task);
-                }
+            if let Some(mut task) = task
+                && let TaskStatus::Waiting { .. } = task.status
+            {
+                debug!(
+                    "Scheduler - Task {} status changed: Waiting -> Scheduled",
+                    task_key
+                );
+                task.status = TaskStatus::scheduled(now_timestamp_secs);
+                lock.insert(task_key, task);
             }
         }
 
@@ -157,65 +157,74 @@ where
             let now_timestamp_secs = time_secs();
 
             let task = task_scheduler.pending_tasks.lock().get(&task_key);
-            if let Some(mut task) = task {
-                if let TaskStatus::Scheduled { .. } = task.status {
-                    debug!(
-                        "Scheduler - Task {} status changed: Scheduled -> Running",
-                        task_key
-                    );
-                    task.status = TaskStatus::running(now_timestamp_secs);
-                    task_scheduler
-                        .pending_tasks
-                        .lock()
-                        .insert(task_key, task.clone());
+            if let Some(mut task) = task
+                && let TaskStatus::Scheduled { .. } = task.status
+            {
+                debug!(
+                    "Scheduler - Task {} status changed: Scheduled -> Running",
+                    task_key
+                );
+                task.status = TaskStatus::running(now_timestamp_secs);
+                task_scheduler
+                    .pending_tasks
+                    .lock()
+                    .insert(task_key, task.clone());
 
-                    let completed_task = match task
-                        .task
-                        .execute(context, Box::new(task_scheduler.clone()))
-                        .await
-                    {
-                        Ok(()) => {
-                            debug!("Scheduler - Task {} execution succeeded. Status changed: Running -> Completed", task_key);
-                            let mut lock = task_scheduler.pending_tasks.lock();
+                let completed_task = match task
+                    .task
+                    .execute(context, Box::new(task_scheduler.clone()))
+                    .await
+                {
+                    Ok(()) => {
+                        debug!(
+                            "Scheduler - Task {} execution succeeded. Status changed: Running -> Completed",
+                            task_key
+                        );
+                        let mut lock = task_scheduler.pending_tasks.lock();
+                        let mut task = lock.remove(&task_key).unwrap();
+                        task.status = TaskStatus::completed(now_timestamp_secs);
+                        Some(task)
+                    }
+                    Err(err) => {
+                        let mut lock = task_scheduler.pending_tasks.lock();
+                        if let Some(updated_task) = lock.get(&task.id) {
+                            task.options = updated_task.options;
+                        }
+                        task.options.failures += 1;
+                        let (should_retry, retry_delay) = match err {
+                            SchedulerError::Unrecoverable(_) => (false, 0),
+                            _ => task
+                                .options
+                                .retry_strategy
+                                .should_retry(task.options.failures),
+                        };
+
+                        if should_retry {
+                            debug!(
+                                "Scheduler - Task {} execution failed. Execution will be retried. Status changed: Running -> Waiting",
+                                task_key
+                            );
+                            task.options.execute_after_timestamp_in_secs =
+                                now_timestamp_secs + (retry_delay as u64);
+                            task.status = TaskStatus::waiting(now_timestamp_secs);
+                            lock.insert(task_key, task);
+                            None
+                        } else {
+                            debug!(
+                                "Scheduler - Task {} execution failed. Status changed: Running -> Failed",
+                                task_key
+                            );
                             let mut task = lock.remove(&task_key).unwrap();
-                            task.status = TaskStatus::completed(now_timestamp_secs);
+                            task.status = TaskStatus::failed(now_timestamp_secs, err);
                             Some(task)
                         }
-                        Err(err) => {
-                            let mut lock = task_scheduler.pending_tasks.lock();
-                            if let Some(updated_task) = lock.get(&task.id) {
-                                task.options = updated_task.options;
-                            }
-                            task.options.failures += 1;
-                            let (should_retry, retry_delay) = match err {
-                                SchedulerError::Unrecoverable(_) => (false, 0),
-                                _ => task
-                                    .options
-                                    .retry_strategy
-                                    .should_retry(task.options.failures),
-                            };
-
-                            if should_retry {
-                                debug!("Scheduler - Task {} execution failed. Execution will be retried. Status changed: Running -> Waiting", task_key);
-                                task.options.execute_after_timestamp_in_secs =
-                                    now_timestamp_secs + (retry_delay as u64);
-                                task.status = TaskStatus::waiting(now_timestamp_secs);
-                                lock.insert(task_key, task);
-                                None
-                            } else {
-                                debug!("Scheduler - Task {} execution failed. Status changed: Running -> Failed", task_key);
-                                let mut task = lock.remove(&task_key).unwrap();
-                                task.status = TaskStatus::failed(now_timestamp_secs, err);
-                                Some(task)
-                            }
-                        }
-                    };
-
-                    if let Some(task) = completed_task {
-                        if let Some(cb) = &*task_scheduler.on_completion_callback {
-                            cb(task);
-                        }
                     }
+                };
+
+                if let Some(task) = completed_task
+                    && let Some(cb) = &*task_scheduler.on_completion_callback
+                {
+                    cb(task);
                 }
             }
         });
@@ -348,11 +357,7 @@ where
     fn find_id(&self, filter: &dyn Fn(T) -> bool) -> Option<u64> {
         self.pending_tasks.lock().iter().find_map(
             |(id, task)| {
-                if filter(task.task) {
-                    Some(id)
-                } else {
-                    None
-                }
+                if filter(task.task) { Some(id) } else { None }
             },
         )
     }

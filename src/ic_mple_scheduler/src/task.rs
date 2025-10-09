@@ -6,9 +6,9 @@ use ic_mple_structures::{Bound, Storable};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::SchedulerError;
 use crate::retry::{BackoffPolicy, RetryPolicy, RetryStrategy};
 use crate::scheduler::TaskScheduler;
-use crate::SchedulerError;
 
 /// A sync task is a unit of work that can be executed by the scheduler.
 pub trait Task {
@@ -106,11 +106,9 @@ impl<T: 'static + Task + Serialize + DeserializeOwned> Storable for InnerSchedul
     }
 
     fn into_bytes(self) -> Vec<u8> {
-        bincode::serialize(&self)
-            .expect("failed to serialize ScheduledTask")
-            .into()
+        bincode::serialize(&self).expect("failed to serialize ScheduledTask")
     }
-    
+
     const BOUND: Bound = Bound::Unbounded;
 }
 

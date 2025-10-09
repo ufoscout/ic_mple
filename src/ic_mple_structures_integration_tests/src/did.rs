@@ -21,7 +21,6 @@ impl Storable for BoundedTransaction {
         std::borrow::Cow::Owned([self.from, self.to, self.value].to_vec())
     }
 
-
     fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
         Self {
             from: bytes[0],
@@ -34,7 +33,7 @@ impl Storable for BoundedTransaction {
         max_size: 3,
         is_fixed_size: true,
     };
-    
+
     fn into_bytes(self) -> Vec<u8> {
         [self.from, self.to, self.value].to_vec()
     }
@@ -57,7 +56,7 @@ impl Storable for UnboundedTransaction {
     }
 
     const BOUND: Bound = Bound::Unbounded;
-    
+
     fn into_bytes(self) -> Vec<u8> {
         encode(&self)
     }

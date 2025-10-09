@@ -83,7 +83,6 @@ where
     V: Storable,
     M: Memory,
 {
-
     /// Initializes a `BTreeMap`.
     ///
     /// If the memory provided already contains a `BTreeMap`, then that

@@ -2,7 +2,7 @@ use std::{hash::Hash, ops::RangeBounds};
 
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::{btreemap::BTreeMapStructure, common::Codec, BTreeMapIter, BTreeMapIteratorStructure};
+use crate::{BTreeMapIter, BTreeMapIteratorStructure, btreemap::BTreeMapStructure, common::Codec};
 
 /// A versioned BTreeMap.
 pub struct VersionedBTreeMap<K, V, D: Clone, M, C: Codec<V, D>>
@@ -29,10 +29,10 @@ where
         Self::with_map(BTreeMap::new(memory), codec)
     }
 
-        /// Create new instance of the VersionedBTreeMap.
-        /// 
-        /// PRECONDITION: the memory is either empty or contains a valid
-        /// stable BTreeMap.
+    /// Create new instance of the VersionedBTreeMap.
+    ///
+    /// PRECONDITION: the memory is either empty or contains a valid
+    /// stable BTreeMap.
     pub fn init(memory: M, codec: C) -> Self {
         Self::with_map(BTreeMap::init(memory), codec)
     }
@@ -108,7 +108,8 @@ where
     }
 }
 
-impl<K, V, D: Clone, M, C: Codec<V, D>> BTreeMapIteratorStructure<K, V> for VersionedBTreeMap<K, V, D, M, C>
+impl<K, V, D: Clone, M, C: Codec<V, D>> BTreeMapIteratorStructure<K, V>
+    for VersionedBTreeMap<K, V, D, M, C>
 where
     K: Storable + Clone + Send + Sync + Hash + Eq + PartialEq + Ord,
     V: Storable + Clone + Send + Sync,
@@ -346,8 +347,10 @@ mod tests {
 
     #[test]
     fn should_iterate() {
-                let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -362,8 +365,10 @@ mod tests {
 
     #[test]
     fn should_iterate_over_range() {
-                let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -377,8 +382,10 @@ mod tests {
 
     #[test]
     fn should_iterate_upper_bound() {
-                let mut map =
-            VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(VectorMemory::default(), DefaultCodec::default());
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+            VectorMemory::default(),
+            DefaultCodec::default(),
+        );
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));

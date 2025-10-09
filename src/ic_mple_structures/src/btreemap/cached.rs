@@ -3,8 +3,9 @@ use std::{hash::Hash, ops::RangeBounds};
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
 use crate::{
+    BTreeMapIter,
     btreemap::{BTreeMapIteratorStructure, BTreeMapStructure},
-    common::LruCache, BTreeMapIter,
+    common::LruCache,
 };
 
 /// A LRU Cache for BTreeMap
@@ -32,7 +33,7 @@ where
     }
 
     /// Create new instance of the CachedUnboundedMap with a fixed number of max cached elements.
-    /// 
+    ///
     /// PRECONDITION: the memory is either empty or contains a valid
     /// stable BTreeMap.
     pub fn init(memory: M, max_cache_items: u32) -> Self {
@@ -305,18 +306,9 @@ mod tests {
         assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
         let mut iter = map.iter();
-        assert_eq!(
-            iter.next(),
-            Some((1, Array([1u8, 1])))
-        );
-        assert_eq!(
-            iter.next(),
-            Some((2, Array([2u8, 1])))
-        );
-        assert_eq!(
-            iter.next(),
-            Some((3, Array([3u8, 1])))
-        );
+        assert_eq!(iter.next(), Some((1, Array([1u8, 1]))));
+        assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
+        assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
         assert_eq!(iter.next(), None);
     }
 
@@ -330,14 +322,8 @@ mod tests {
         assert_eq!(None, map.insert(3, Array([3u8, 1])));
 
         let mut iter = map.range(2..5);
-        assert_eq!(
-            iter.next(),
-            Some((2, Array([2u8, 1])))
-        );
-        assert_eq!(
-            iter.next(),
-            Some((3, Array([3u8, 1])))
-        );
+        assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
+        assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
         assert_eq!(iter.next(), None);
     }
 
@@ -352,14 +338,8 @@ mod tests {
 
         let mut iter = map.iter_from_prev_key(&3);
 
-        assert_eq!(
-            iter.next(),
-            Some((2, Array([2u8, 1])))
-        );
-        assert_eq!(
-            iter.next(),
-            Some((3, Array([3u8, 1])))
-        );
+        assert_eq!(iter.next(), Some((2, Array([2u8, 1]))));
+        assert_eq!(iter.next(), Some((3, Array([3u8, 1]))));
         assert_eq!(iter.next(), None);
     }
 

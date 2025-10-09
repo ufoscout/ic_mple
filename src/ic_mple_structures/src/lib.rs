@@ -10,10 +10,13 @@ mod vec;
 mod test_utils;
 
 pub use {
-    ic_stable_structures::{storable::Bound, StableBTreeMap, StableCell, VectorMemory, Memory, Storable, StableBTreeSet, StableLog, StableVec, DefaultMemoryImpl, MAX_PAGES, memory_manager::*},
     btreemap::*,
     cell::*,
     common::*,
+    ic_stable_structures::{
+        DefaultMemoryImpl, MAX_PAGES, Memory, StableBTreeMap, StableBTreeSet, StableCell,
+        StableLog, StableVec, Storable, VectorMemory, memory_manager::*, storable::Bound,
+    },
     log::*,
     multimap::*,
     ringbuffer::*,

@@ -11,19 +11,12 @@ async fn should_push_tx_to_cached_btreemap() {
     let ctx = new_test_context().await;
     // We saturate the cache to force eviction
     for i in 1..100 {
-        ctx.insert_tx_to_cached_btreemap(i, i, 10 + i)
-            .await;
-        assert!(ctx
-            .get_tx_from_cached_btreemap(i as u64)
-            .await
-            .is_some());
+        ctx.insert_tx_to_cached_btreemap(i, i, 10 + i).await;
+        assert!(ctx.get_tx_from_cached_btreemap(i as u64).await.is_some());
     }
 
     for i in 1..100 {
-        assert!(ctx
-            .get_tx_from_cached_btreemap(i as u64)
-            .await
-            .is_some());
+        assert!(ctx.get_tx_from_cached_btreemap(i as u64).await.is_some());
     }
 }
 

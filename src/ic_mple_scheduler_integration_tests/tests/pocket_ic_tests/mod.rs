@@ -9,9 +9,9 @@ use candid::{CandidType, Encode, Principal};
 use ic_mple_client::{CanisterClient, PocketIcClient};
 use ic_mple_pocket_ic::get_pocket_ic_client;
 use ic_mple_pocket_ic::pocket_ic::nonblocking::PocketIc;
+use ic_mple_scheduler::SchedulerError;
 use ic_mple_scheduler::scheduler::TaskScheduler;
 use ic_mple_scheduler::task::{InnerScheduledTask, Task};
-use ic_mple_scheduler::SchedulerError;
 use serde::{Deserialize, Serialize};
 use wasm_utils::get_dummy_scheduler_canister_bytecode;
 
@@ -83,8 +83,7 @@ async fn deploy_dummy_scheduler_canister() -> PocketIcTestContext {
         .await;
     println!("Canister created with principal {}", canister);
 
-    let canister_client =
-        PocketIcClient::from_client(client, canister, alice());
+    let canister_client = PocketIcClient::from_client(client, canister, alice());
 
     let env = PocketIcTestContext {
         canister_client,

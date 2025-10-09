@@ -3,10 +3,7 @@ use std::borrow::Cow;
 use candid::{CandidType, Decode, Deserialize, Encode};
 use ic_stable_structures::{Storable, storable::Bound};
 
-use crate::common::{
-    Bounded,
-    Codec, RefCodec,
-};
+use crate::common::{Bounded, Codec, RefCodec};
 
 #[derive(Clone, CandidType, Deserialize, PartialEq, Eq, Debug)]
 pub enum VersionedUser {

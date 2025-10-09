@@ -1,7 +1,10 @@
 use std::time::SystemTime;
 
 use candid::Principal;
-use ic_cdk::{api::{canister_cycle_balance, canister_self}, futures::spawn};
+use ic_cdk::{
+    api::{canister_cycle_balance, canister_self},
+    futures::spawn,
+};
 
 #[cfg(all(not(target_family = "wasm"), feature = "tokio"))]
 pub mod tokio_local;
@@ -25,7 +28,6 @@ pub type IcApi = IcPlatform;
 /// A wrapper trait for the IC API.
 /// It allows us to use a mock or non-wasm-based implementation.
 pub trait IcTrait {
-
     /// Gets canister's own identity.
     fn canister_self(&self) -> Principal;
 
@@ -45,7 +47,6 @@ pub trait IcTrait {
     fn spawn<F: 'static + Future<Output = ()>>(&self, future: F);
 
     fn print<S: std::convert::AsRef<str>>(&self, s: S);
-
 }
 
 /// The default implementation of the IC API
@@ -53,7 +54,6 @@ pub trait IcTrait {
 pub struct IcPlatform;
 
 impl IcTrait for IcPlatform {
-
     fn canister_self(&self) -> Principal {
         canister_self()
     }
@@ -69,11 +69,11 @@ impl IcTrait for IcPlatform {
     fn spawn<F: 'static + Future<Output = ()>>(&self, future: F) {
         spawn(future)
     }
-    
+
     fn canister_cycle_balance(&self) -> u128 {
         canister_cycle_balance()
     }
-    
+
     fn current_system_time(&self) -> SystemTime {
         let timestamp_in_nanos = self.time_ns();
         std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_nanos(timestamp_in_nanos)
@@ -82,5 +82,4 @@ impl IcTrait for IcPlatform {
     fn print<S: std::convert::AsRef<str>>(&self, s: S) {
         ic_cdk::api::debug_print(s)
     }
-
 }

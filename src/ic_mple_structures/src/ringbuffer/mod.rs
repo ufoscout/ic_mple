@@ -5,8 +5,8 @@ use std::num::NonZeroU64;
 use ic_stable_structures::storable::Bound;
 use ic_stable_structures::{Memory, StableCell, Storable};
 
-use crate::vec::VecStructure;
 use crate::vec::VecExt;
+use crate::vec::VecStructure;
 
 /// Ring buffer indices state
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -142,9 +142,9 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
         }
     }
 
-        /// Creates new ring buffer.
-        /// 
-        /// PRECONDITION: the memories are either empty or contain valid
+    /// Creates new ring buffer.
+    ///
+    /// PRECONDITION: the memories are either empty or contain valid
     /// ring buffer data.
     pub fn init(
         data_memory: DataMemory,

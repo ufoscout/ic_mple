@@ -7,7 +7,6 @@ pub struct VecExt<T: Storable, M: Memory>(Option<vec::Vec<T, M>>);
 /// A stable analogue of the `std::vec::Vec`:
 /// integer-indexed collection of mutable values that is able to grow.
 impl<T: Storable, M: Memory> VecExt<T, M> {
-    
     /// Initializes a vector in the specified memory.
     ///
     /// Complexity: O(1)
@@ -18,7 +17,7 @@ impl<T: Storable, M: Memory> VecExt<T, M> {
         Self(Some(vec::Vec::init(memory)))
     }
 
-        /// Creates a new empty vector in the specified memory,
+    /// Creates a new empty vector in the specified memory,
     /// overwriting any data structures the memory might have
     /// contained previously.
     pub fn new(memory: M) -> Self {

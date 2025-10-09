@@ -63,146 +63,122 @@ impl PocketIcTestContext {
 
     pub async fn get_tx_from_btreemap(&self, key: u64) -> Option<BoundedTransaction> {
         let args = Encode!(&key).unwrap();
-        self
-            .query_as(alice(), self.dummy_canister, "get_tx_from_btreemap", args)
+        self.query_as(alice(), self.dummy_canister, "get_tx_from_btreemap", args)
             .await
     }
 
     pub async fn insert_tx_to_btreemap(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(alice(), self.dummy_canister, "insert_tx_to_btreemap", args)
+        self.update_call_as(alice(), self.dummy_canister, "insert_tx_to_btreemap", args)
             .await
     }
 
-    pub async fn get_tx_from_cached_btreemap(
-        &self,
-        key: u64,
-    ) -> Option<BoundedTransaction> {
+    pub async fn get_tx_from_cached_btreemap(&self, key: u64) -> Option<BoundedTransaction> {
         let args = Encode!(&key).unwrap();
-        self
-            .query_as(
-                alice(),
-                self.dummy_canister,
-                "get_tx_from_cached_btreemap",
-                args,
-            )
-            .await
+        self.query_as(
+            alice(),
+            self.dummy_canister,
+            "get_tx_from_cached_btreemap",
+            args,
+        )
+        .await
     }
 
     pub async fn insert_tx_to_cached_btreemap(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(
-                alice(),
-                self.dummy_canister,
-                "insert_tx_to_cached_btreemap",
-                args,
-            )
-            .await
+        self.update_call_as(
+            alice(),
+            self.dummy_canister,
+            "insert_tx_to_cached_btreemap",
+            args,
+        )
+        .await
     }
 
     pub async fn get_tx_from_cell(&self) -> BoundedTransaction {
         let args = Encode!(&()).unwrap();
-        self
-            .query_as(alice(), self.dummy_canister, "get_tx_from_cell", args)
+        self.query_as(alice(), self.dummy_canister, "get_tx_from_cell", args)
             .await
     }
 
-    pub async fn insert_tx_to_cell(
-        &self,
-        from: u8,
-        to: u8,
-        value: u8,
-    ) -> BoundedTransaction {
+    pub async fn insert_tx_to_cell(&self, from: u8, to: u8, value: u8) -> BoundedTransaction {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(alice(), self.dummy_canister, "insert_tx_to_cell", args)
+        self.update_call_as(alice(), self.dummy_canister, "insert_tx_to_cell", args)
             .await
     }
 
     pub async fn get_tx_from_unboundedmap(&self, key: u64) -> Option<UnboundedTransaction> {
         let args = Encode!(&key).unwrap();
-        self
-            .query_as(
-                alice(),
-                self.dummy_canister,
-                "get_tx_from_unboundedmap",
-                args,
-            )
-            .await
+        self.query_as(
+            alice(),
+            self.dummy_canister,
+            "get_tx_from_unboundedmap",
+            args,
+        )
+        .await
     }
 
     pub async fn insert_tx_to_unboundedmap(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&UnboundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(
-                alice(),
-                self.dummy_canister,
-                "insert_tx_to_unboundedmap",
-                args,
-            )
-            .await
+        self.update_call_as(
+            alice(),
+            self.dummy_canister,
+            "insert_tx_to_unboundedmap",
+            args,
+        )
+        .await
     }
 
     pub async fn get_tx_from_multimap(&self, key: u64) -> Option<BoundedTransaction> {
         let args = Encode!(&key).unwrap();
-        self
-            .query_as(alice(), self.dummy_canister, "get_tx_from_multimap", args)
+        self.query_as(alice(), self.dummy_canister, "get_tx_from_multimap", args)
             .await
     }
 
     pub async fn insert_tx_to_multimap(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(alice(), self.dummy_canister, "insert_tx_to_multimap", args)
+        self.update_call_as(alice(), self.dummy_canister, "insert_tx_to_multimap", args)
             .await
     }
 
     pub async fn get_tx_from_vec(&self, index: u64) -> Option<BoundedTransaction> {
         let args = Encode!(&index).unwrap();
-        self
-            .query_as(alice(), self.dummy_canister, "get_tx_from_vec", args)
+        self.query_as(alice(), self.dummy_canister, "get_tx_from_vec", args)
             .await
     }
 
     pub async fn push_tx_to_vec(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(alice(), self.dummy_canister, "push_tx_to_vec", args)
+        self.update_call_as(alice(), self.dummy_canister, "push_tx_to_vec", args)
             .await
     }
 
     pub async fn get_tx_from_ring_buffer(&self, index: u64) -> Option<BoundedTransaction> {
         let args = Encode!(&index).unwrap();
-        self
-            .query_as(
-                alice(),
-                self.dummy_canister,
-                "get_tx_from_ring_buffer",
-                args,
-            )
-            .await
+        self.query_as(
+            alice(),
+            self.dummy_canister,
+            "get_tx_from_ring_buffer",
+            args,
+        )
+        .await
     }
 
     pub async fn push_tx_to_ring_buffer(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(alice(), self.dummy_canister, "push_tx_to_ring_buffer", args)
+        self.update_call_as(alice(), self.dummy_canister, "push_tx_to_ring_buffer", args)
             .await
     }
 
     pub async fn get_tx_from_log(&self, index: u64) -> Option<BoundedTransaction> {
         let args = Encode!(&index).unwrap();
-        self
-            .query_as(alice(), self.dummy_canister, "get_tx_from_log", args)
+        self.query_as(alice(), self.dummy_canister, "get_tx_from_log", args)
             .await
     }
 
     pub async fn push_tx_to_log(&self, from: u8, to: u8, value: u8) -> u64 {
         let args = Encode!(&BoundedTransaction { from, to, value }).unwrap();
-        self
-            .update_call_as(alice(), self.dummy_canister, "push_tx_to_log", args)
+        self.update_call_as(alice(), self.dummy_canister, "push_tx_to_log", args)
             .await
     }
 }
@@ -240,5 +216,4 @@ async fn upgrade_dummy_canister(ctx: &PocketIcTestContext) {
         .upgrade_canister(ctx.dummy_canister, dummy_wasm, args, None)
         .await
         .unwrap();
-
 }

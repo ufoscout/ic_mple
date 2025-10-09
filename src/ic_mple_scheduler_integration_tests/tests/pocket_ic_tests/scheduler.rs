@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use rand::Rng;
 
-use crate::pocket_ic_tests::{deploy_dummy_scheduler_canister, DummyTask};
+use crate::pocket_ic_tests::{DummyTask, deploy_dummy_scheduler_canister};
 
 thread_local! {
     static CANISTER: std::cell::RefCell<Principal> = const { std::cell::RefCell::new(Principal::anonymous()) };

@@ -340,44 +340,44 @@ pub mod test {
     #[test]
     fn retry_policy_edge_cases() {
         let FIX_ME = 0;
-    //     assert!(RetryPolicy::None.should_retry(0));
-    //     assert!(!RetryPolicy::None.should_retry(1));
-    //     assert!(!RetryPolicy::None.should_retry(u32::MAX));
-    //     assert!(!RetryPolicy::None.should_retry(u32::MAX - 1));
+        //     assert!(RetryPolicy::None.should_retry(0));
+        //     assert!(!RetryPolicy::None.should_retry(1));
+        //     assert!(!RetryPolicy::None.should_retry(u32::MAX));
+        //     assert!(!RetryPolicy::None.should_retry(u32::MAX - 1));
 
-    //     assert!(RetryPolicy::MaxRetries { retries: 0 }.should_retry(0));
-    //     assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(1));
-    //     assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(u32::MAX - 1));
-    //     assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(u32::MAX));
+        //     assert!(RetryPolicy::MaxRetries { retries: 0 }.should_retry(0));
+        //     assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(1));
+        //     assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(u32::MAX - 1));
+        //     assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(u32::MAX));
 
-    //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0));
-    //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(1));
-    //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(u32::MAX - 1));
-    //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(u32::MAX));
+        //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0));
+        //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(1));
+        //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(u32::MAX - 1));
+        //     assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(u32::MAX));
 
-    //     assert!(RetryPolicy::Infinite.should_retry(0));
-    //     assert!(RetryPolicy::Infinite.should_retry(1));
-    //     assert!(RetryPolicy::Infinite.should_retry(u32::MAX));
-    //     assert!(RetryPolicy::Infinite.should_retry(u32::MAX - 1));
+        //     assert!(RetryPolicy::Infinite.should_retry(0));
+        //     assert!(RetryPolicy::Infinite.should_retry(1));
+        //     assert!(RetryPolicy::Infinite.should_retry(u32::MAX));
+        //     assert!(RetryPolicy::Infinite.should_retry(u32::MAX - 1));
 
-    //     let ctx = MockContext::new().inject();
-    //     assert!(RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(0));
-    //     assert!(!RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(1));
-    //     assert!(!RetryPolicy::Timeout {
-    //         timeout_ts: ctx.time() - 1
-    //     }
-    //     .should_retry(1));
-    //     assert!(RetryPolicy::Timeout {
-    //         timeout_ts: ctx.time()
-    //     }
-    //     .should_retry(1));
-    //     assert!(RetryPolicy::Timeout {
-    //         timeout_ts: ctx.time() + 1
-    //     }
-    //     .should_retry(1));
-    //     assert!(RetryPolicy::Timeout {
-    //         timeout_ts: u64::MAX
-    //     }
-    //     .should_retry(1));
+        //     let ctx = MockContext::new().inject();
+        //     assert!(RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(0));
+        //     assert!(!RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(1));
+        //     assert!(!RetryPolicy::Timeout {
+        //         timeout_ts: ctx.time() - 1
+        //     }
+        //     .should_retry(1));
+        //     assert!(RetryPolicy::Timeout {
+        //         timeout_ts: ctx.time()
+        //     }
+        //     .should_retry(1));
+        //     assert!(RetryPolicy::Timeout {
+        //         timeout_ts: ctx.time() + 1
+        //     }
+        //     .should_retry(1));
+        //     assert!(RetryPolicy::Timeout {
+        //         timeout_ts: u64::MAX
+        //     }
+        //     .should_retry(1));
     }
 }

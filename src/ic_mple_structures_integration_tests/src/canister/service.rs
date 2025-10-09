@@ -147,9 +147,7 @@ impl Service {
 
     pub fn insert_tx_to_cell(transaction: BoundedTransaction) {
         TX_CELL.with(|storage| {
-            storage
-                .borrow_mut()
-                .set(transaction);
+            storage.borrow_mut().set(transaction);
         })
     }
 
@@ -159,9 +157,7 @@ impl Service {
 
     pub fn push_tx_to_log(transaction: BoundedTransaction) -> u64 {
         TX_LOG.with(|storage| {
-            storage
-                .borrow_mut()
-                .append(&transaction).unwrap();
+            storage.borrow_mut().append(&transaction).unwrap();
 
             storage.borrow().len()
         })
@@ -211,9 +207,7 @@ impl Service {
 
     pub fn push_tx_to_vec(transaction: BoundedTransaction) -> u64 {
         TX_VEC.with(|storage| {
-            storage
-                .borrow_mut()
-                .push(&transaction);
+            storage.borrow_mut().push(&transaction);
 
             storage.borrow().len()
         })
