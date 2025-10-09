@@ -1,0 +1,17 @@
+[package]
+name = "ic_mple_structures_integration_tests"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+ic_mple_structures = { workspace = true, features = ["cached"] }
+serde = { workspace = true }
+
+[dev-dependencies]
+ic_mple_client = { workspace = true, features = ["pocket-ic"]}
+ic_mple_pocket_ic = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }

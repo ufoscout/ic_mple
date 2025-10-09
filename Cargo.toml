@@ -39,6 +39,6 @@ reqwest = { version = "0.12", default-features = false, features = [
 ] }
 ringbuffer = "0.16"
 serde = { version = "1.0", features = ["derive"] }
-schnellru = "0.2"
+schnellru = { version = "0.2", default-features = false }
 thiserror = "2"
 tokio = { version = "1", default-features = false }

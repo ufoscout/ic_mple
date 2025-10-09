@@ -15,6 +15,5 @@ build:
   # build the test-canister wasm for integration tests
   cargo build -p ic_mple_client_integration_tests --target wasm32-unknown-unknown --release
   cargo build -p ic_mple_scheduler_integration_tests --target wasm32-unknown-unknown --release
+  cargo build -p ic_mple_structures_integration_tests --target wasm32-unknown-unknown --release
   
-
-
