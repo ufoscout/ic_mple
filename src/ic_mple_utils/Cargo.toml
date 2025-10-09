@@ -11,3 +11,13 @@ authors.workspace = true
 keywords = ["IC", "PocketIC", "internet-computer"]
 
 [dependencies]
+candid = { workspace = true }
+ic-cdk = { workspace = true }
+tokio = { workspace = true, optional = true }
+
+[features]
+default = []
+
+# Enables a tokio based implementation of the IC API for testing
+ic_tokio = ["tokio"]
+

@@ -1,0 +1,30 @@
+[package]
+name = "ic_mple_scheduler"
+description = "Generic service for scheduling tasks in the Internet Computer"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["IC", "internet-computer", "scheduler"]
+
+[dependencies]
+# bincode = { workspace = true }
+candid = { workspace = true }
+ic-cdk-timers = { workspace = true }
+# ic-kit = { path = "../ic-kit" }
+# ic-stable-structures = { path = "../ic-stable-structures" }
+log = { workspace = true }
+# parking_lot = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# anyhow = { workspace = true }
+candid = { workspace = true }
+ic_mple_client = { workspace = true, features = ["pocket-ic"]}
+# ic-exports = { path = "../ic-exports", features = ["pocket-ic-tests"] }
+rand = { workspace = true }
+tokio = { workspace = true, features = ["rt", "macros", "time"] }
+

@@ -1,7 +1,7 @@
 
 # Publishes all artifacts
 [group('publish')]
-publish_all: publish_utils publish_auth publish_pocket_ic publish_client publish_structures publish_log
+publish_all: publish_utils publish_auth publish_pocket_ic publish_client publish_structures publish_log publish_scheduler 
 
 
 # Publishes ic_mple_auth
@@ -26,6 +26,12 @@ publish_log:
 [group('publish')]
 publish_pocket_ic:
   cargo publish -p ic_mple_pocket_ic
+
+
+# Publishes ic_mple_scheduler
+[group('publish')]
+publish_scheduler:
+  cargo publish -p ic_mple_scheduler
 
 
 # Publishes ic_mple_structures
