@@ -1,6 +1,6 @@
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::{btreemap::BTreeMapStructure, common::codec::Codec};
+use crate::{btreemap::BTreeMapStructure, common::Codec};
 
 /// A versioned BTreeMap.
 pub struct VersionedBTreeMap<K, V, D: Clone, M, C: Codec<V, D>>
@@ -102,7 +102,7 @@ mod tests {
     use ic_stable_structures::VectorMemory;
 
     use crate::{
-        common::codec::DefaultCodec,
+        common::DefaultCodec,
         test_utils::{Array, UserCodec, UserV1, UserV2, VersionedUser},
     };
 

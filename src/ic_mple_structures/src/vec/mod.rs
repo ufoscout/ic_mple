@@ -1,4 +1,6 @@
-pub mod ext;
+mod ext;
+
+pub use ext::VecExt;
 
 pub trait VecStructure<T> {
     /// Returns if vector is empty

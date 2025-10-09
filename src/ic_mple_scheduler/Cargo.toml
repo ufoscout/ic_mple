@@ -10,10 +10,12 @@ authors.workspace = true
 keywords = ["IC", "internet-computer", "scheduler"]
 
 [dependencies]
-# bincode = { workspace = true }
+bincode = "1"
+parking_lot = "0.12"
 candid = { workspace = true }
+ic-cdk = { workspace = true }
 ic-cdk-timers = { workspace = true }
-# ic-kit = { path = "../ic-kit" }
+ic_mple_structures = { workspace = true }
 # ic-stable-structures = { path = "../ic-stable-structures" }
 log = { workspace = true }
 # parking_lot = { workspace = true }

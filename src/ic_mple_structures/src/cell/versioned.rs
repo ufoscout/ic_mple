@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use ic_stable_structures::{Memory, StableCell, Storable};
 
-use crate::{cell::CellStructure, common::codec::RefCodec};
+use crate::{cell::CellStructure, common::RefCodec};
 
 /// A versioned stable cell.
 pub struct VersionedStableCell<T: Storable, M: Memory, C: RefCodec<T, D>, D: Clone> {

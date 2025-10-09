@@ -4,7 +4,7 @@ use ic_stable_structures::{BTreeMap, Memory, Storable};
 
 use crate::{
     btreemap::{BTreeMapIteratorStructure, BTreeMapStructure},
-    common::lru::LruCache,
+    common::LruCache,
 };
 
 /// A LRU Cache for BTreeMap

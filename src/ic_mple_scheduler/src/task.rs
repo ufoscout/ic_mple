@@ -2,7 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use candid::CandidType;
-use ic_stable_structures::{Bound, Storable};
+use ic_mple_structures::{Bound, Storable};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -105,6 +105,12 @@ impl<T: 'static + Task + Serialize + DeserializeOwned> Storable for InnerSchedul
         bincode::deserialize(&bytes).expect("failed to deserialize ScheduledTask")
     }
 
+    fn into_bytes(self) -> Vec<u8> {
+        bincode::serialize(&self)
+            .expect("failed to serialize ScheduledTask")
+            .into()
+    }
+    
     const BOUND: Bound = Bound::Unbounded;
 }
 

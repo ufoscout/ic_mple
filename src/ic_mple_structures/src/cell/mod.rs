@@ -2,7 +2,9 @@ use std::borrow::Cow;
 
 use ic_stable_structures::{Memory, StableCell, Storable};
 
-pub mod versioned;
+mod versioned;
+
+pub use versioned::VersionedStableCell;
 
 pub trait CellStructure<T: Clone> {
     /// Returns the current value in the cell.

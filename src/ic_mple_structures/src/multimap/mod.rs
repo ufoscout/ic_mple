@@ -1,9 +1,12 @@
 use ic_stable_structures::{Memory, StableBTreeMap, Storable, btreemap};
 
-use crate::common::bound::Bounded;
+use crate::common::Bounded;
 
 #[cfg(feature = "cached")]
-pub mod cached;
+mod cached;
+
+#[cfg(feature = "cached")]
+pub use cached::CachedStableMultimap;
 
 pub trait MultimapStructure<K1, K2, V> {
     /// iterator over the whole map

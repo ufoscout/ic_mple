@@ -4,8 +4,8 @@ use candid::{CandidType, Decode, Deserialize, Encode};
 use ic_stable_structures::{Storable, storable::Bound};
 
 use crate::common::{
-    bound::Bounded,
-    codec::{Codec, RefCodec},
+    Bounded,
+    Codec, RefCodec,
 };
 
 #[derive(Clone, CandidType, Deserialize, PartialEq, Eq, Debug)]
@@ -103,31 +103,6 @@ impl RefCodec<VersionedUser, UserV2> for UserCodec {
     fn encode(&self, dest: UserV2) -> VersionedUser {
         VersionedUser::V2(dest)
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, CandidType, Deserialize)]
-pub struct StringValue(pub String);
-
-impl Storable for StringValue {
-    const BOUND: Bound = Bound::Unbounded;
-
-    fn to_bytes(&self) -> std::borrow::Cow<'_, [u8]> {
-        Encode!(&self).unwrap().into()
-    }
-
-    fn into_bytes(self) -> Vec<u8> {
-        Encode!(&self).unwrap()
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-}
-
-pub fn str_val(len: usize) -> StringValue {
-    let mut s = String::with_capacity(len);
-    s.extend((0..len).map(|_| 'Q'));
-    StringValue(s)
 }
 
 /// New type pattern used to implement `Storable` trait for all arrays.

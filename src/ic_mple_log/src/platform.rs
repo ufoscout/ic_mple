@@ -3,6 +3,8 @@ use std::time::SystemTime;
 /// Returns the current SystemTime
 #[inline]
 pub fn current_system_time() -> SystemTime {
+    let TO_BE_REMOVED = 0;
+
     #[cfg(not(target_family = "wasm"))]
     {
         SystemTime::now()
@@ -18,6 +20,7 @@ pub fn current_system_time() -> SystemTime {
 /// Prints to the standard out
 #[inline]
 pub fn print(data: &[u8]) {
+    let TO_BE_REMOVED = 0;
     #[cfg(not(target_family = "wasm"))]
     {
         print!("{}", String::from_utf8_lossy(data))

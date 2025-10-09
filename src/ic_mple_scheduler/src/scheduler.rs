@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
-use ic_stable_structures::{BTreeMapStructure, CellStructure, IterableSortedMapStructure};
+use ic_mple_structures::{BTreeMapStructure, CellStructure, BTreeMapIteratorStructure};
 use log::{debug, warn};
 use parking_lot::Mutex;
 use serde::de::DeserializeOwned;
@@ -20,7 +20,7 @@ pub struct Scheduler<T, P, S>
 where
     T: 'static + Task,
     P: 'static
-        + IterableSortedMapStructure<u64, InnerScheduledTask<T>>
+        + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
         + BTreeMapStructure<u64, InnerScheduledTask<T>>,
     S: 'static + CellStructure<u64>,
 {
@@ -37,7 +37,7 @@ where
     T: 'static + Task + Serialize + DeserializeOwned + Clone,
     T::Ctx: Clone,
     P: 'static
-        + IterableSortedMapStructure<u64, InnerScheduledTask<T>>
+        + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
         + BTreeMapStructure<u64, InnerScheduledTask<T>>,
     S: 'static + CellStructure<u64>,
 {
@@ -225,8 +225,7 @@ where
     fn next_task_id(&self) -> u64 {
         let mut lock = self.task_id_sequence.lock();
         let id = *lock.get();
-        lock.set(id + 1)
-            .expect("Unable to access the stable storage to set the next task id");
+        lock.set(id + 1);
         id
     }
 
@@ -242,7 +241,7 @@ where
     #[inline(always)]
     fn spawn<F: 'static + std::future::Future<Output = ()>>(future: F) {
         ic_cdk_timers::set_timer(std::time::Duration::from_millis(0), || {
-            ic_kit::ic::spawn(future);
+            ic_cdk::futures::spawn(future);
         });
     }
 }
@@ -278,7 +277,7 @@ impl<T, P, S> Clone for Scheduler<T, P, S>
 where
     T: 'static + Task + Serialize + DeserializeOwned,
     P: 'static
-        + IterableSortedMapStructure<u64, InnerScheduledTask<T>>
+        + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
         + BTreeMapStructure<u64, InnerScheduledTask<T>>,
     S: 'static + CellStructure<u64>,
 {
@@ -300,7 +299,7 @@ where
     T: 'static + Task + Serialize + DeserializeOwned + Clone,
     T::Ctx: Clone,
     P: 'static
-        + IterableSortedMapStructure<u64, InnerScheduledTask<T>>
+        + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
         + BTreeMapStructure<u64, InnerScheduledTask<T>>,
     S: 'static + CellStructure<u64>,
 {
@@ -373,7 +372,7 @@ mod test {
         use std::sync::atomic::AtomicBool;
         use std::time::Duration;
 
-        use ic_stable_structures::{StableBTreeMap, StableCell, VectorMemory};
+        use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use rand::random;
         use serde::{Deserialize, Serialize};
 
@@ -459,7 +458,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     scheduler.append_task(SimpleTaskSteps::One { id }.into());
@@ -502,7 +501,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let mut scheduler = Scheduler::new(map, sequence);
                     scheduler.on_completion_callback(move |task| {
                         if let TaskStatus::Completed { .. } = task.status {
@@ -549,7 +548,7 @@ mod test {
         use std::pin::Pin;
         use std::time::Duration;
 
-        use ic_stable_structures::{StableBTreeMap, StableCell, VectorMemory};
+        use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use rand::random;
         use serde::{Deserialize, Serialize};
 
@@ -597,7 +596,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     let timestamp: u64 = random();
@@ -641,7 +640,7 @@ mod test {
         use std::pin::Pin;
         use std::time::Duration;
 
-        use ic_stable_structures::{StableBTreeMap, StableCell, VectorMemory};
+        use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use rand::random;
         use serde::{Deserialize, Serialize};
 
@@ -737,7 +736,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     let fails = 10;
@@ -801,7 +800,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     let fails = 2;
@@ -846,7 +845,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     let fails = 10;
@@ -906,7 +905,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let mut scheduler = Scheduler::new(map, sequence);
 
                     scheduler.on_completion_callback(move |task| {
@@ -946,7 +945,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let mut scheduler = Scheduler::new(map, sequence);
 
                     scheduler.on_completion_callback(move |task| {
@@ -1003,7 +1002,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let mut scheduler = Scheduler::new(map, sequence);
 
                     scheduler.on_completion_callback(move |_| {
@@ -1073,7 +1072,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     let retries = 10;
@@ -1107,7 +1106,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
                     let retries = 10;
@@ -1149,7 +1148,7 @@ mod test {
         use std::time::Duration;
 
         use candid::Deserialize;
-        use ic_stable_structures::{StableBTreeMap, StableCell, VectorMemory};
+        use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use tokio::sync::Notify;
 
         use super::*;
@@ -1220,7 +1219,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let task = SucceedingTask {};
 
@@ -1240,7 +1239,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let task = FailingTask {};
 
@@ -1264,7 +1263,7 @@ mod test {
                 .run_until(async move {
                     let map: StableBTreeMap<u64, InnerScheduledTask<SucceedingTask>, _> =
                         StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
 
                     scheduler.reschedule(42, TaskOptions::new());
@@ -1278,7 +1277,7 @@ mod test {
             local
                 .run_until(async move {
                     let map = StableBTreeMap::new(VectorMemory::default());
-                    let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+                    let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let task = AwaitingTask {};
 
@@ -1320,7 +1319,7 @@ mod test {
     }
 
     mod test_find_id {
-        use ic_stable_structures::{StableBTreeMap, StableCell, VectorMemory};
+        use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
 
         use crate::scheduler::test::test_delay::SimpleTask;
         use crate::scheduler::{Scheduler, TaskScheduler};
@@ -1329,7 +1328,7 @@ mod test {
         #[test]
         fn finding_id_by_task_returns_correct_id() {
             let map = StableBTreeMap::new(VectorMemory::default());
-            let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+            let sequence = StableCell::new(VectorMemory::default(), 0);
             let scheduler = Scheduler::new(map, sequence);
             for id in 0..10 {
                 let id_in_scheduler =
@@ -1346,7 +1345,7 @@ mod test {
         #[test]
         fn finding_id_by_task_returns_none_if_not_found() {
             let map = StableBTreeMap::new(VectorMemory::default());
-            let sequence = StableCell::new(VectorMemory::default(), 0).unwrap();
+            let sequence = StableCell::new(VectorMemory::default(), 0);
             let scheduler = Scheduler::new(map, sequence);
             for id in 0..10 {
                 let id_in_scheduler =
@@ -1364,7 +1363,7 @@ mod test {
         fn should_get_next_task_from_the_sequence() {
             let base_task_id = 12345;
             let map = StableBTreeMap::new(VectorMemory::default());
-            let sequence = StableCell::new(VectorMemory::default(), base_task_id).unwrap();
+            let sequence = StableCell::new(VectorMemory::default(), base_task_id);
             let scheduler = Scheduler::new(map, sequence);
 
             for id in base_task_id..(base_task_id + 10) {

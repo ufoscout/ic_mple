@@ -1,10 +1,21 @@
-pub mod btreemap;
-pub mod cell;
-pub mod common;
-pub mod log;
-pub mod multimap;
-pub mod ringbuffer;
-pub mod vec;
+mod btreemap;
+mod cell;
+mod common;
+mod log;
+mod multimap;
+mod ringbuffer;
+mod vec;
 
 #[cfg(test)]
-pub mod test_utils;
+mod test_utils;
+
+pub use {
+    ic_stable_structures::{storable::Bound, StableBTreeMap, StableCell, VectorMemory, Memory, Storable, StableBTreeSet, StableLog, StableVec, DefaultMemoryImpl, MAX_PAGES, memory_manager::*},
+    btreemap::*,
+    cell::*,
+    common::*,
+    log::*,
+    multimap::*,
+    ringbuffer::*,
+    vec::*,
+};

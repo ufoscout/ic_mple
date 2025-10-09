@@ -3,7 +3,7 @@ use std::hash::Hash;
 use ic_stable_structures::{Memory, Storable};
 
 use crate::{
-    common::{bound::Bounded, lru::LruCache},
+    common::{Bounded, LruCache},
     multimap::{MultimapStructure, StableMultimap},
 };
 

@@ -3,8 +3,11 @@ use std::ops::RangeBounds;
 use ic_stable_structures::{BTreeMap, Memory, Storable, btreemap};
 
 #[cfg(feature = "cached")]
-pub mod cached;
-pub mod versioned;
+mod cached;
+mod versioned;
+
+pub use cached::CachedBTreeMap;
+pub use versioned::VersionedBTreeMap;
 
 pub trait BTreeMapStructure<K, V> {
     /// Return value associated with `key` from stable memory.

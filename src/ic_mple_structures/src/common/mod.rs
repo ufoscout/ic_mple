@@ -1,4 +1,10 @@
-pub mod bound;
-pub mod codec;
+mod bound;
+mod codec;
 #[cfg(feature = "cached")]
-pub mod lru;
+mod lru;
+
+pub use bound::Bounded;
+pub use codec::*;
+
+#[cfg(feature = "cached")]
+pub use lru::LruCache;

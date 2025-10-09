@@ -1,6 +1,8 @@
 use ic_stable_structures::log::WriteError;
 
-pub mod ext;
+mod ext;
+
+pub use ext::LogExt;
 
 pub trait LogStructure<T> {
     /// Returns reference to value stored in stable memory.

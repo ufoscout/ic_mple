@@ -6,7 +6,7 @@ use ic_stable_structures::storable::Bound;
 use ic_stable_structures::{Memory, StableCell, Storable};
 
 use crate::vec::VecStructure;
-use crate::vec::ext::VecExt;
+use crate::vec::VecExt;
 
 /// Ring buffer indices state
 #[derive(Clone, Debug, PartialEq, Eq)]
