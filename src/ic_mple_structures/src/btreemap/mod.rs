@@ -4,8 +4,6 @@ use ic_stable_structures::{BTreeMap, Memory, Storable, btreemap};
 
 #[cfg(feature = "cached")]
 pub mod cached;
-#[cfg(feature = "cached")]
-mod lru;
 pub mod versioned;
 
 pub trait BTreeMapStructure<K, V> {

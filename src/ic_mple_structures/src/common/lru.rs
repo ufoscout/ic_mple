@@ -3,13 +3,12 @@ use std::{cell::RefCell, convert::Infallible};
 
 use schnellru::{ByLength, LruMap};
 
-/// A wrapper around `LruCache`. This struct is thread safe, doesn't return any references to any
-/// elements inside.
-pub struct SyncLruCache<K, V> {
+/// A wrapper around `LruMap`.
+pub struct LruCache<K, V> {
     inner: RefCell<LruMap<K, V>>,
 }
 
-impl<K, V> SyncLruCache<K, V>
+impl<K, V> LruCache<K, V>
 where
     K: Hash + Eq + Clone,
     V: Clone,
@@ -103,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_cache() {
-        let cache = SyncLruCache::<u64, Vec<u64>>::new(100.try_into().unwrap());
+        let cache = LruCache::<u64, Vec<u64>>::new(100.try_into().unwrap());
 
         assert_eq!(cache.get(&0u64), None);
         assert_eq!(

@@ -2,7 +2,7 @@ use std::{hash::Hash, ops::RangeBounds};
 
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::btreemap::{BTreeMapIteratorStructure, BTreeMapStructure, lru::SyncLruCache};
+use crate::{btreemap::{BTreeMapIteratorStructure, BTreeMapStructure}, common::lru::LruCache};
 
 /// A LRU Cache for BTreeMap
 pub struct CachedBTreeMap<K, V, M>
@@ -12,7 +12,7 @@ where
     M: Memory,
 {
     inner: BTreeMap<K, V, M>,
-    cache: SyncLruCache<K, V>,
+    cache: LruCache<K, V>,
 }
 
 impl<K, V, M> CachedBTreeMap<K, V, M>
@@ -30,7 +30,7 @@ where
     pub fn with_map(inner: BTreeMap<K, V, M>, max_cache_items: u32) -> Self {
         Self {
             inner,
-            cache: SyncLruCache::new(max_cache_items),
+            cache: LruCache::new(max_cache_items),
         }
     }
 

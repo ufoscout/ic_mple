@@ -3,7 +3,7 @@ use std::mem::size_of;
 use std::num::NonZeroU64;
 
 use ic_stable_structures::storable::Bound;
-use ic_stable_structures::{Cell as StableCell, Memory, Storable};
+use ic_stable_structures::{StableCell, Memory, Storable};
 
 use crate::vec::ext::VecExt;
 use crate::vec::VecStructure;

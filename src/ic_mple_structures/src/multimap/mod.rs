@@ -2,6 +2,8 @@ use ic_stable_structures::{btreemap, Memory, StableBTreeMap, Storable};
 
 use crate::common::bound::Bounded;
 
+#[cfg(feature = "cached")]
+pub mod cached; 
 
 pub trait MultimapStructure<K1, K2, V> {
     /// iterator over the whole map
