@@ -3,8 +3,9 @@ use std::mem::size_of;
 use std::num::NonZeroU64;
 
 use ic_stable_structures::storable::Bound;
-use ic_stable_structures::{Cell as StableCell, Memory, Storable, Vec as StableVec};
+use ic_stable_structures::{Cell as StableCell, Memory, Storable};
 
+use crate::vec::ext::VecExt;
 use crate::vec::VecStructure;
 
 /// Ring buffer indices state
@@ -116,7 +117,7 @@ impl Storable for StableRingBufferIndices {
 /// Stable ring buffer implementation
 pub struct StableRingBuffer<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory> {
     /// Vector with elements
-    data: Option<StableVec<T, DataMemory>>,
+    data: VecExt<T, DataMemory>,
     /// Indices that specify where are the first and last elements in the buffer
     indices: StableCell<StableRingBufferIndices, IndicesMemory>,
 }
@@ -131,7 +132,7 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
         default_history_size: NonZeroU64,
     ) -> Self {
         Self {
-            data: Some(StableVec::new(data_memory)),
+            data: VecExt::new(data_memory),
             indices: StableCell::new(
                 indices_memory,
                 StableRingBufferIndices::new(default_history_size),
@@ -141,11 +142,11 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
 
     /// Creates new ring buffer
     pub fn new_with(
-        data: StableVec<T, DataMemory>,
+        data: VecExt<T, DataMemory>,
         indices: StableCell<StableRingBufferIndices, IndicesMemory>,
     ) -> Self {
         Self {
-            data: Some(data),
+            data,
             indices,
         }
     }
@@ -282,7 +283,7 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
     #[inline]
     fn with_indices_data_mut<R>(
         &mut self,
-        f: impl Fn(&mut StableRingBufferIndices, &mut Option<StableVec<T, DataMemory>>) -> R,
+        f: impl Fn(&mut StableRingBufferIndices, &mut VecExt<T, DataMemory>) -> R,
     ) -> R {
         let mut indices = self.indices.get().clone();
         let result = f(&mut indices, &mut self.data);
