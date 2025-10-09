@@ -18,4 +18,3 @@ pub trait LogStructure<T> {
     /// Remove all items from the log.
     fn clear(&mut self);
 }
-

@@ -3,10 +3,10 @@ use std::mem::size_of;
 use std::num::NonZeroU64;
 
 use ic_stable_structures::storable::Bound;
-use ic_stable_structures::{StableCell, Memory, Storable};
+use ic_stable_structures::{Memory, StableCell, Storable};
 
-use crate::vec::ext::VecExt;
 use crate::vec::VecStructure;
+use crate::vec::ext::VecExt;
 
 /// Ring buffer indices state
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -145,10 +145,7 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
         data: VecExt<T, DataMemory>,
         indices: StableCell<StableRingBufferIndices, IndicesMemory>,
     ) -> Self {
-        Self {
-            data,
-            indices,
-        }
+        Self { data, indices }
     }
 
     /// Removes all elements in the buffer

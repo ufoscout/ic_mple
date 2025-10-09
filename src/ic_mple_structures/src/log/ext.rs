@@ -1,4 +1,7 @@
-use ic_stable_structures::{log::{self, WriteError}, Memory, Storable};
+use ic_stable_structures::{
+    Memory, Storable,
+    log::{self, WriteError},
+};
 
 use crate::log::LogStructure;
 
@@ -30,8 +33,7 @@ impl<T: Storable, M: Memory> LogStructure<T> for LogExt<T, M> {
     }
 
     fn append(&mut self, value: T) -> Result<u64, WriteError> {
-        self.mut_inner()
-            .append(&value)
+        self.mut_inner().append(&value)
     }
 
     fn len(&self) -> u64 {

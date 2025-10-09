@@ -1,4 +1,4 @@
-use ic_stable_structures::{vec, Memory, Storable};
+use ic_stable_structures::{Memory, Storable, vec};
 
 use crate::vec::VecStructure;
 

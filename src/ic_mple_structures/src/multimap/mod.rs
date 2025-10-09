@@ -1,9 +1,9 @@
-use ic_stable_structures::{btreemap, Memory, StableBTreeMap, Storable};
+use ic_stable_structures::{Memory, StableBTreeMap, Storable, btreemap};
 
 use crate::common::bound::Bounded;
 
 #[cfg(feature = "cached")]
-pub mod cached; 
+pub mod cached;
 
 pub trait MultimapStructure<K1, K2, V> {
     /// iterator over the whole map
@@ -63,7 +63,6 @@ pub trait MultimapStructure<K1, K2, V> {
     /// Remove all entries from the map.
     fn clear(&mut self);
 }
-
 
 /// `StableMultimap` stores two keys against a single value, making it possible
 /// to fetch all values by the root key, or a single value by specifying both keys.

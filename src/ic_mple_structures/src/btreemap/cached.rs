@@ -2,7 +2,10 @@ use std::{hash::Hash, ops::RangeBounds};
 
 use ic_stable_structures::{BTreeMap, Memory, Storable};
 
-use crate::{btreemap::{BTreeMapIteratorStructure, BTreeMapStructure}, common::lru::LruCache};
+use crate::{
+    btreemap::{BTreeMapIteratorStructure, BTreeMapStructure},
+    common::lru::LruCache,
+};
 
 /// A LRU Cache for BTreeMap
 pub struct CachedBTreeMap<K, V, M>

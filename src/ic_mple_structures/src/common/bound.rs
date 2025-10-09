@@ -1,6 +1,5 @@
 use candid::Principal;
 
-
 /// A trait for types that have a minimum and maximum value.
 pub trait Bounded {
     const MIN: Self;
@@ -92,7 +91,7 @@ impl Bounded for Principal {
 
 #[cfg(test)]
 mod tests {
-    
+
     use super::*;
 
     #[test]
