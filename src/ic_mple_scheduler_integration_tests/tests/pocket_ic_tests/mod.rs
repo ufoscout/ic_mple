@@ -6,14 +6,18 @@ use std::pin::Pin;
 use std::time::Duration;
 
 use candid::{CandidType, Encode, Principal};
-use ic_canister_client::PocketIcClient;
-use ic_exports::pocket_ic::{init_pocket_ic, PocketIc};
-use ic_kit::mock_principals::alice;
-use ic_task_scheduler::scheduler::TaskScheduler;
-use ic_task_scheduler::task::{InnerScheduledTask, Task};
-use ic_task_scheduler::SchedulerError;
+use ic_mple_client::{CanisterClient, PocketIcClient};
+use ic_mple_pocket_ic::get_pocket_ic_client;
+use ic_mple_pocket_ic::pocket_ic::nonblocking::PocketIc;
+use ic_mple_scheduler::scheduler::TaskScheduler;
+use ic_mple_scheduler::task::{InnerScheduledTask, Task};
+use ic_mple_scheduler::SchedulerError;
 use serde::{Deserialize, Serialize};
 use wasm_utils::get_dummy_scheduler_canister_bytecode;
+
+pub fn alice() -> Principal {
+    Principal::from_text("sgymv-uiaaa-aaaaa-aaaia-cai").unwrap()
+}
 
 pub struct PocketIcTestContext {
     canister_client: PocketIcClient,
@@ -69,8 +73,8 @@ impl PocketIcTestContext {
     }
 }
 
-async fn deploy_dummy_scheduler_canister() -> anyhow::Result<PocketIcTestContext> {
-    let client = init_pocket_ic().await.build_async().await;
+async fn deploy_dummy_scheduler_canister() -> PocketIcTestContext {
+    let client = get_pocket_ic_client().await.build_async().await;
     println!("Creating dummy canister");
 
     let sender = alice();
@@ -80,7 +84,7 @@ async fn deploy_dummy_scheduler_canister() -> anyhow::Result<PocketIcTestContext
     println!("Canister created with principal {}", canister);
 
     let canister_client =
-        ic_canister_client::PocketIcClient::from_client(client, canister, alice());
+        PocketIcClient::from_client(client, canister, alice());
 
     let env = PocketIcTestContext {
         canister_client,
@@ -91,14 +95,14 @@ async fn deploy_dummy_scheduler_canister() -> anyhow::Result<PocketIcTestContext
     println!("cycles added");
 
     let dummy_wasm = get_dummy_scheduler_canister_bytecode();
-    let args = Encode!(&())?;
+    let args = Encode!(&()).unwrap();
     env.client()
         .install_canister(canister, dummy_wasm.to_vec(), args, Some(sender))
         .await;
 
     println!("Installed dummy canister");
 
-    Ok(env)
+    env
 }
 
 #[derive(CandidType, Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]

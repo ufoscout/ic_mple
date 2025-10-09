@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 pub fn get_dummy_scheduler_canister_bytecode() -> Vec<u8> {
     static CANISTER_BYTECODE: OnceLock<Vec<u8>> = OnceLock::new();
     CANISTER_BYTECODE
-        .get_or_init(|| load_wasm_bytecode_or_panic("dummy_scheduler_canister.wasm"))
+        .get_or_init(|| load_wasm_bytecode_or_panic("ic_mple_scheduler_integration_tests.wasm"))
         .to_owned()
 }
 
@@ -24,7 +24,7 @@ fn load_wasm_bytecode_or_panic(wasm_name: &str) -> Vec<u8> {
 }
 
 fn get_path_to_wasm(wasm_name: &str) -> PathBuf {
-    const ARTIFACT_PATH: &str = "../target/wasm32-unknown-unknown/release/";
+    const ARTIFACT_PATH: &str = "../../target/wasm32-unknown-unknown/release/";
     // Get to the root of the project
     let wasm_path = format!("{}{}", ARTIFACT_PATH, wasm_name);
     println!("path: {wasm_path:?}");

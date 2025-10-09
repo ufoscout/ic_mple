@@ -95,7 +95,7 @@ impl<T: Task> InnerScheduledTask<T> {
 }
 
 impl<T: 'static + Task + Serialize + DeserializeOwned> Storable for InnerScheduledTask<T> {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+    fn to_bytes(&self) -> std::borrow::Cow<'_, [u8]> {
         bincode::serialize(self)
             .expect("failed to serialize ScheduledTask")
             .into()

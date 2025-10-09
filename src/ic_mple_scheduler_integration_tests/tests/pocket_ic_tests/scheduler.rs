@@ -12,7 +12,7 @@ thread_local! {
 #[tokio::test]
 async fn test_should_remove_panicking_task() {
     // Arrange
-    let test_ctx = deploy_dummy_scheduler_canister().await.unwrap();
+    let test_ctx = deploy_dummy_scheduler_canister().await;
     CANISTER.with_borrow_mut(|principal| *principal = test_ctx.dummy_scheduler_canister);
 
     let mut tasks = vec![
