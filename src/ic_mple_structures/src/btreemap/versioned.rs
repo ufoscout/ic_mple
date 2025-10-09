@@ -22,9 +22,19 @@ where
     V: Storable,
     M: Memory,
 {
-    /// Create new instance of the VersionedBTreeMap.
+    /// Create new instance of the VersionedBTreeMap,
+    /// overwriting any data structures the memory might have
+    /// contained previously
     pub fn new(memory: M, codec: C) -> Self {
         Self::with_map(BTreeMap::new(memory), codec)
+    }
+
+        /// Create new instance of the VersionedBTreeMap.
+        /// 
+        /// PRECONDITION: the memory is either empty or contains a valid
+        /// stable BTreeMap.
+    pub fn init(memory: M, codec: C) -> Self {
+        Self::with_map(BTreeMap::init(memory), codec)
     }
 
     /// Create new instance of the VersionedBTreeMap.

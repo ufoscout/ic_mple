@@ -19,35 +19,35 @@ thread_local! {
     static MEMORY_MANAGER: MemoryManager<DefaultMemoryImpl> = MemoryManager::init(DefaultMemoryImpl::default());
 
     static TX_BTREEMAP: RefCell<StableBTreeMap<u64, BoundedTransaction, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(StableBTreeMap::new(MEMORY_MANAGER.with(|mm| mm.get(TX_BTREEMAP_MEMORY_ID))))
+        RefCell::new(StableBTreeMap::init(MEMORY_MANAGER.with(|mm| mm.get(TX_BTREEMAP_MEMORY_ID))))
     };
 
     static TX_CELL: RefCell<StableCell<BoundedTransaction, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(StableCell::new(MEMORY_MANAGER.with(|mm| mm.get(TX_CELL_MEMORY_ID)), BoundedTransaction::default()))
+        RefCell::new(StableCell::init(MEMORY_MANAGER.with(|mm| mm.get(TX_CELL_MEMORY_ID)), BoundedTransaction::default()))
     };
 
     static TX_LOG: RefCell<StableLog<BoundedTransaction, VirtualMemory<DefaultMemoryImpl>, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(StableLog::new(MEMORY_MANAGER.with(|mm| mm.get(TX_LOG_INDEX_MEMORY_ID)), MEMORY_MANAGER.with(|mm| mm.get(TX_LOG_MEMORY_ID))))
+        RefCell::new(StableLog::init(MEMORY_MANAGER.with(|mm| mm.get(TX_LOG_INDEX_MEMORY_ID)), MEMORY_MANAGER.with(|mm| mm.get(TX_LOG_MEMORY_ID))))
     };
 
     static TX_UNBOUNDEDMAP: RefCell<StableBTreeMap<u64, UnboundedTransaction, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(StableBTreeMap::new(MEMORY_MANAGER.with(|mm| mm.get(TX_UNBOUNDEDMAP_MEMORY_ID))))
+        RefCell::new(StableBTreeMap::init(MEMORY_MANAGER.with(|mm| mm.get(TX_UNBOUNDEDMAP_MEMORY_ID))))
     };
 
     static TX_MULTIMAP: RefCell<StableMultimap<u64, u64, BoundedTransaction, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(StableMultimap::new(MEMORY_MANAGER.with(|mm| mm.get(TX_MULTIMAP_MEMORY_ID))))
+        RefCell::new(StableMultimap::init(MEMORY_MANAGER.with(|mm| mm.get(TX_MULTIMAP_MEMORY_ID))))
     };
 
     static TX_VEC: RefCell<VecExt<BoundedTransaction, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(VecExt::new(MEMORY_MANAGER.with(|mm| mm.get(TX_VEC_MEMORY_ID))))
+        RefCell::new(VecExt::init(MEMORY_MANAGER.with(|mm| mm.get(TX_VEC_MEMORY_ID))))
     };
 
     static TX_RING_BUFFER: RefCell<StableRingBuffer<BoundedTransaction, VirtualMemory<DefaultMemoryImpl>, VirtualMemory<DefaultMemoryImpl>>> = {
-        RefCell::new(StableRingBuffer::new(MEMORY_MANAGER.with(|mm| mm.get(TX_RING_BUFFER_VEC_MEMORY_ID)), MEMORY_MANAGER.with(|mm| mm.get(TX_RING_BUFFER_INDICES_MEMORY_ID)), 4.try_into().unwrap()))
+        RefCell::new(StableRingBuffer::init(MEMORY_MANAGER.with(|mm| mm.get(TX_RING_BUFFER_VEC_MEMORY_ID)), MEMORY_MANAGER.with(|mm| mm.get(TX_RING_BUFFER_INDICES_MEMORY_ID)), 4.try_into().unwrap()))
     };
 
         static TX_CACHED_BTREEMAP: RefCell<CachedBTreeMap<u64, BoundedTransaction, VirtualMemory<DefaultMemoryImpl>>> = {
-            RefCell::new(CachedBTreeMap::new(MEMORY_MANAGER.with(|mm| mm.get(TX_CACHED_BTREEMAP_MEMORY_ID)), 10))
+            RefCell::new(CachedBTreeMap::init(MEMORY_MANAGER.with(|mm| mm.get(TX_CACHED_BTREEMAP_MEMORY_ID)), 10))
         };
 
 }

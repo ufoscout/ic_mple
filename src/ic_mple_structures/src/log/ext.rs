@@ -10,9 +10,18 @@ use crate::log::LogStructure;
 pub struct LogExt<T: Storable, M: Memory>(Option<log::Log<T, M, M>>);
 
 impl<T: Storable, M: Memory> LogExt<T, M> {
-    /// Create new storage for values with `T` type.
+    /// Create new storage for values with `T` type,
+    /// overwriting any data structures the memory might have
+    /// contained previously
     pub fn new(index_memory: M, data_memory: M) -> Self {
-        // Method returns Result to be compatible with wasm implementation.
+        Self(Some(log::Log::new(index_memory, data_memory)))
+    }
+
+    /// Create new storage for values with `T` type.
+    /// 
+            /// PRECONDITION: the memories are either empty or contain valid
+    /// log data.
+    pub fn init(index_memory: M, data_memory: M) -> Self {
         Self(Some(log::Log::init(index_memory, data_memory)))
     }
 

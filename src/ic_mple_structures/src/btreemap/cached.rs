@@ -24,9 +24,19 @@ where
     V: Storable + Clone + Send + Sync + 'static,
     M: Memory,
 {
-    /// Create new instance of the CachedUnboundedMap with a fixed number of max cached elements.
+    /// Create new instance of the CachedUnboundedMap with a fixed number of max cached elements,
+    /// overwriting any data structures the memory might have
+    /// contained previously.
     pub fn new(memory: M, max_cache_items: u32) -> Self {
         Self::with_map(BTreeMap::new(memory), max_cache_items)
+    }
+
+    /// Create new instance of the CachedUnboundedMap with a fixed number of max cached elements.
+    /// 
+    /// PRECONDITION: the memory is either empty or contains a valid
+    /// stable BTreeMap.
+    pub fn init(memory: M, max_cache_items: u32) -> Self {
+        Self::with_map(BTreeMap::init(memory), max_cache_items)
     }
 
     /// Create new instance of the CachedUnboundedMap with a fixed number of max cached elements.

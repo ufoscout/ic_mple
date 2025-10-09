@@ -125,7 +125,9 @@ pub struct StableRingBuffer<T: Storable + Clone, DataMemory: Memory, IndicesMemo
 impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
     StableRingBuffer<T, DataMemory, IndicesMemory>
 {
-    /// Creates new ring buffer
+    /// Creates new ring buffer,
+    /// overwriting any data structures the memory might have
+    /// contained previously
     pub fn new(
         data_memory: DataMemory,
         indices_memory: IndicesMemory,
@@ -134,6 +136,24 @@ impl<T: Storable + Clone, DataMemory: Memory, IndicesMemory: Memory>
         Self {
             data: VecExt::new(data_memory),
             indices: StableCell::new(
+                indices_memory,
+                StableRingBufferIndices::new(default_history_size),
+            ),
+        }
+    }
+
+        /// Creates new ring buffer.
+        /// 
+        /// PRECONDITION: the memories are either empty or contain valid
+    /// ring buffer data.
+    pub fn init(
+        data_memory: DataMemory,
+        indices_memory: IndicesMemory,
+        default_history_size: NonZeroU64,
+    ) -> Self {
+        Self {
+            data: VecExt::init(data_memory),
+            indices: StableCell::init(
                 indices_memory,
                 StableRingBufferIndices::new(default_history_size),
             ),

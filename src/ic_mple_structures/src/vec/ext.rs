@@ -7,9 +7,22 @@ pub struct VecExt<T: Storable, M: Memory>(Option<vec::Vec<T, M>>);
 /// A stable analogue of the `std::vec::Vec`:
 /// integer-indexed collection of mutable values that is able to grow.
 impl<T: Storable, M: Memory> VecExt<T, M> {
-    /// Creates new `StableVec`
-    pub fn new(memory: M) -> Self {
+    
+    /// Initializes a vector in the specified memory.
+    ///
+    /// Complexity: O(1)
+    ///
+    /// PRECONDITION: the memory is either empty or contains a valid
+    /// stable vector.
+    pub fn init(memory: M) -> Self {
         Self(Some(vec::Vec::init(memory)))
+    }
+
+        /// Creates a new empty vector in the specified memory,
+    /// overwriting any data structures the memory might have
+    /// contained previously.
+    pub fn new(memory: M) -> Self {
+        Self(Some(vec::Vec::new(memory)))
     }
 
     /// Returns iterator over the elements in the vector
@@ -70,7 +83,7 @@ mod tests {
 
     #[test]
     fn vec_works() {
-        let mut vec = VecExt::<u64, _>::new(VectorMemory::default());
+        let mut vec = VecExt::<u64, _>::init(VectorMemory::default());
 
         assert!(vec.is_empty());
         assert_eq!(vec.len(), 0);
@@ -128,7 +141,7 @@ mod tests {
     #[should_panic]
     #[test]
     fn vec_unbounded_items() {
-        let mut vec = VecExt::<String, _>::new(VectorMemory::default());
+        let mut vec = VecExt::<String, _>::init(VectorMemory::default());
 
         let item = "I am an unbounded item".to_string();
         vec.push(&item);

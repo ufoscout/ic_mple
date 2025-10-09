@@ -83,9 +83,19 @@ where
     V: Storable,
     M: Memory,
 {
-    /// Create a new instance of a `StableMultimap`.
-    pub fn new(memory: M) -> Self {
+
+    /// Initializes a `BTreeMap`.
+    ///
+    /// If the memory provided already contains a `BTreeMap`, then that
+    /// map is loaded. Otherwise, a new `BTreeMap` instance is created.
+    pub fn init(memory: M) -> Self {
         Self(StableBTreeMap::init(memory))
+    }
+
+    /// Creates a new instance a `BTreeMap` overwriting any data structures the memory might have
+    /// contained previously.
+    pub fn new(memory: M) -> Self {
+        Self(StableBTreeMap::new(memory))
     }
 
     /// Returns upper bound iterator for the given pair of keys.
