@@ -3,20 +3,20 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ic_mple_structures::{BTreeMapIteratorStructure, BTreeMapStructure, CellStructure};
+use ic_mple_utils::ic_api::{IcApi, IcTrait};
 use log::{debug, warn};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::SchedulerError;
 use crate::task::{InnerScheduledTask, ScheduledTask, Task, TaskOptions, TaskStatus};
-use crate::time::time_secs;
 
 type TaskCompletionCallback<T> = Box<dyn 'static + Fn(InnerScheduledTask<T>) + Send>;
 
 const DEFAULT_RUNNING_TASK_TIMEOUT_SECS: u64 = 120;
 
 /// A scheduler is responsible for executing tasks.
-pub struct Scheduler<T, P, S>
+pub struct Scheduler<T, P, S, IC: IcTrait = IcApi>
 where
     T: 'static + Task,
     P: 'static
@@ -30,6 +30,7 @@ where
     running_task_timeout_secs: AtomicU64,
     /// The next scheduled task id
     task_id_sequence: Arc<RefCell<S>>,
+    ic: IC,
 }
 
 impl<T, P, S> Scheduler<T, P, S>
@@ -45,12 +46,31 @@ where
     /// The sequence is used to generate the next task id. The caller is responsible for ensuring
     /// that the sequence starts from an initial value that is not used by any existing pending task.
     pub fn new(pending_tasks: P, task_id_sequence: S) -> Self {
+        Self::new_with_ic(pending_tasks, task_id_sequence, IcApi::default())
+    }
+
+}
+
+impl<T, P, S, IC: IcTrait + 'static> Scheduler<T, P, S, IC>
+where
+    T: 'static + Task + Serialize + DeserializeOwned + Clone,
+    T::Ctx: Clone,
+    P: 'static
+        + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
+        + BTreeMapStructure<u64, InnerScheduledTask<T>>,
+    S: 'static + CellStructure<u64>,
+{
+    /// Create a new scheduler.
+    /// The sequence is used to generate the next task id. The caller is responsible for ensuring
+    /// that the sequence starts from an initial value that is not used by any existing pending task.
+    pub fn new_with_ic(pending_tasks: P, task_id_sequence: S, ic: IC) -> Self {
         Self {
             pending_tasks: Arc::new(RefCell::new(pending_tasks)),
             phantom: std::marker::PhantomData,
             on_completion_callback: Arc::new(None),
             running_task_timeout_secs: AtomicU64::new(DEFAULT_RUNNING_TASK_TIMEOUT_SECS),
             task_id_sequence: Arc::new(RefCell::new(task_id_sequence)),
+            ic
         }
     }
 
@@ -73,7 +93,7 @@ where
     /// This function does not wait for the tasks to complete.
     /// Returns the number of tasks that have been launched.
     pub fn run(&self, ctx: T::Ctx) -> Result<usize, SchedulerError> {
-        self.run_with_timestamp(ctx, time_secs())
+        self.run_with_timestamp(ctx, self.ic.time_secs())
     }
 
     fn run_with_timestamp(
@@ -89,6 +109,7 @@ where
         {
             let borrow_mut = self.pending_tasks.borrow();
             for (task_key, task) in borrow_mut.iter() {
+                println!("Scheduler - Task {} status: {:?}", task_key, task.status);
                 match task.status {
                     TaskStatus::Waiting { .. } => {
                         if task.options.execute_after_timestamp_in_secs <= now_timestamp_secs {
@@ -153,8 +174,9 @@ where
             }
         }
 
-        Self::spawn(async move {
-            let now_timestamp_secs = time_secs();
+        let now_timestamp_secs = self.ic.time_secs();
+        let now_timestamp_nanos = self.ic.time_nanos();
+        self.ic.spawn_detached(async move {
 
             let task = task_scheduler.pending_tasks.borrow().get(&task_key);
             if let Some(mut task) = task
@@ -196,7 +218,7 @@ where
                             _ => task
                                 .options
                                 .retry_strategy
-                                .should_retry(task.options.failures),
+                                .should_retry(now_timestamp_nanos, task.options.failures),
                         };
 
                         if should_retry {
@@ -238,21 +260,6 @@ where
         id
     }
 
-    // We use tokio for testing instead of ic_kit::ic::spawn because the latter blocks the current thread
-    // waiting for the spawned futures to complete.
-    // This makes impossible to test concurrent behavior.
-    #[cfg(test)]
-    fn spawn<F: 'static + std::future::Future<Output = ()>>(future: F) {
-        tokio::task::spawn_local(future);
-    }
-
-    #[cfg(not(test))]
-    #[inline(always)]
-    fn spawn<F: 'static + std::future::Future<Output = ()>>(future: F) {
-        ic_cdk_timers::set_timer(std::time::Duration::from_millis(0), || {
-            ic_cdk::futures::spawn(future);
-        });
-    }
 }
 
 pub trait TaskScheduler<T: 'static + Task> {
@@ -282,7 +289,7 @@ pub trait TaskScheduler<T: 'static + Task> {
     fn reschedule(&self, task_id: u64, options: TaskOptions);
 }
 
-impl<T, P, S> Clone for Scheduler<T, P, S>
+impl<T, P, S, IC: IcTrait> Clone for Scheduler<T, P, S, IC>
 where
     T: 'static + Task + Serialize + DeserializeOwned,
     P: 'static
@@ -299,11 +306,12 @@ where
                 self.running_task_timeout_secs.load(Ordering::Relaxed),
             ),
             task_id_sequence: self.task_id_sequence.clone(),
+            ic: self.ic.clone(),
         }
     }
 }
 
-impl<T, P, S> TaskScheduler<T> for Scheduler<T, P, S>
+impl<T, P, S, IC: IcTrait + 'static> TaskScheduler<T> for Scheduler<T, P, S, IC>
 where
     T: 'static + Task + Serialize + DeserializeOwned + Clone,
     T::Ctx: Clone,
@@ -313,7 +321,7 @@ where
     S: 'static + CellStructure<u64>,
 {
     fn append_task(&self, task: ScheduledTask<T>) -> u64 {
-        let time_secs = time_secs();
+        let time_secs = self.ic.time_secs();
         let mut borrow_mut = self.pending_tasks.borrow_mut();
         let key = self.next_task_id();
         borrow_mut.insert(
@@ -866,7 +874,7 @@ mod test {
                             .into(),
                     );
 
-                    let timestamp = time_secs();
+                    let timestamp = scheduler.ic.time_secs();
                     assert_eq!(1, scheduler.run_with_timestamp((), timestamp).unwrap());
                     tokio::time::sleep(Duration::from_millis(25)).await;
 
@@ -892,7 +900,7 @@ mod test {
                     assert_eq!(
                         1,
                         scheduler
-                            .run_with_timestamp((), timestamp + retry_delay_secs)
+                            .run_with_timestamp((), timestamp + retry_delay_secs + 10)
                             .unwrap()
                     );
                 })

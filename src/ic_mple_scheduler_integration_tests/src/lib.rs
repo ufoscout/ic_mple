@@ -119,6 +119,7 @@ pub fn run_scheduler() {
 }
 
 fn do_run_scheduler() {
+    ic_cdk::println!("run_scheduler");
     let scheduler = SCHEDULER.with_borrow(|scheduler| scheduler.clone());
     scheduler.run(()).unwrap();
 }

@@ -13,11 +13,13 @@ keywords = ["IC", "PocketIC", "internet-computer"]
 [dependencies]
 candid = { workspace = true }
 ic-cdk = { workspace = true }
+ic-cdk-timers = { workspace = true }
+serde = { workspace = true }
 tokio = { workspace = true, optional = true }
 
 [features]
 default = []
 
 # Enables a tokio based implementation of the IC API for testing
-ic_tokio = ["tokio"]
+ic_mock = ["tokio"]
 

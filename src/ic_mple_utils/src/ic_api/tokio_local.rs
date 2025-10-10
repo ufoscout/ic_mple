@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use candid::Principal;
+use candid::{CandidType, Deserialize, Principal};
 
 use crate::ic_api::IcTrait;
 
@@ -8,7 +8,7 @@ use crate::ic_api::IcTrait;
 /// This runs on the host machine instead of the IC
 /// This is useful for local development and testing
 /// This should not be used in production as most of the returned data is fake
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
 pub struct TokioIcApi {
     canister_id: candid::Principal,
     canister_cycle_balance: u128,
@@ -51,18 +51,18 @@ impl IcTrait for TokioIcApi {
         self.canister_cycle_balance
     }
 
-    fn time_ns(&self) -> u64 {
+    fn time_nanos(&self) -> u64 {
         self.current_system_time()
             .duration_since(std::time::SystemTime::UNIX_EPOCH)
             .expect("get current timestamp error")
-            .as_secs()
+            .as_nanos() as u64
     }
 
     fn time_secs(&self) -> u64 {
         self.current_system_time()
             .duration_since(std::time::SystemTime::UNIX_EPOCH)
             .expect("get current timestamp error")
-            .as_nanos() as u64
+            .as_secs()
     }
 
     fn current_system_time(&self) -> std::time::SystemTime {
@@ -75,5 +75,9 @@ impl IcTrait for TokioIcApi {
 
     fn print<S: std::convert::AsRef<str>>(&self, s: S) {
         println!("{}", s.as_ref())
+    }
+    
+    fn spawn_detached<F: 'static + Future<Output = ()>>(&self, future: F) {
+        self.spawn(future);
     }
 }
