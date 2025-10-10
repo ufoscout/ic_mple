@@ -1,9 +1,9 @@
+use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ic_mple_structures::{BTreeMapIteratorStructure, BTreeMapStructure, CellStructure};
 use log::{debug, warn};
-use parking_lot::Mutex;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
@@ -24,12 +24,12 @@ where
         + BTreeMapStructure<u64, InnerScheduledTask<T>>,
     S: 'static + CellStructure<u64>,
 {
-    pending_tasks: Arc<Mutex<P>>,
+    pending_tasks: Arc<RefCell<P>>,
     phantom: std::marker::PhantomData<T>,
     on_completion_callback: Arc<Option<TaskCompletionCallback<T>>>,
     running_task_timeout_secs: AtomicU64,
     /// The next scheduled task id
-    task_id_sequence: Arc<Mutex<S>>,
+    task_id_sequence: Arc<RefCell<S>>,
 }
 
 impl<T, P, S> Scheduler<T, P, S>
@@ -46,11 +46,11 @@ where
     /// that the sequence starts from an initial value that is not used by any existing pending task.
     pub fn new(pending_tasks: P, task_id_sequence: S) -> Self {
         Self {
-            pending_tasks: Arc::new(Mutex::new(pending_tasks)),
+            pending_tasks: Arc::new(RefCell::new(pending_tasks)),
             phantom: std::marker::PhantomData,
             on_completion_callback: Arc::new(None),
             running_task_timeout_secs: AtomicU64::new(DEFAULT_RUNNING_TASK_TIMEOUT_SECS),
-            task_id_sequence: Arc::new(Mutex::new(task_id_sequence)),
+            task_id_sequence: Arc::new(RefCell::new(task_id_sequence)),
         }
     }
 
@@ -87,8 +87,8 @@ where
         let running_task_timeout_secs = self.running_task_timeout_secs.load(Ordering::Relaxed);
 
         {
-            let lock = self.pending_tasks.lock();
-            for (task_key, task) in lock.iter() {
+            let borrow_mut = self.pending_tasks.borrow();
+            for (task_key, task) in borrow_mut.iter() {
                 match task.status {
                     TaskStatus::Waiting { .. } => {
                         if task.options.execute_after_timestamp_in_secs <= now_timestamp_secs {
@@ -120,9 +120,9 @@ where
 
         // Remove the tasks that are out of time
         {
-            let mut lock = self.pending_tasks.lock();
+            let mut borrow_mut = self.pending_tasks.borrow_mut();
             for task_key in out_of_time_tasks.into_iter() {
-                if let Some(mut task) = lock.remove(&task_key) {
+                if let Some(mut task) = borrow_mut.remove(&task_key) {
                     task.status = TaskStatus::timeout_or_panic(now_timestamp_secs);
                     if let Some(cb) = &*self.on_completion_callback {
                         cb(task);
@@ -139,8 +139,8 @@ where
 
         // Set the task as scheduled
         {
-            let mut lock = task_scheduler.pending_tasks.lock();
-            let task = lock.get(&task_key);
+            let mut borrow_mut = task_scheduler.pending_tasks.borrow_mut();
+            let task = borrow_mut.get(&task_key);
             if let Some(mut task) = task
                 && let TaskStatus::Waiting { .. } = task.status
             {
@@ -149,14 +149,14 @@ where
                     task_key
                 );
                 task.status = TaskStatus::scheduled(now_timestamp_secs);
-                lock.insert(task_key, task);
+                borrow_mut.insert(task_key, task);
             }
         }
 
         Self::spawn(async move {
             let now_timestamp_secs = time_secs();
 
-            let task = task_scheduler.pending_tasks.lock().get(&task_key);
+            let task = task_scheduler.pending_tasks.borrow().get(&task_key);
             if let Some(mut task) = task
                 && let TaskStatus::Scheduled { .. } = task.status
             {
@@ -167,7 +167,7 @@ where
                 task.status = TaskStatus::running(now_timestamp_secs);
                 task_scheduler
                     .pending_tasks
-                    .lock()
+                    .borrow_mut()
                     .insert(task_key, task.clone());
 
                 let completed_task = match task
@@ -180,14 +180,14 @@ where
                             "Scheduler - Task {} execution succeeded. Status changed: Running -> Completed",
                             task_key
                         );
-                        let mut lock = task_scheduler.pending_tasks.lock();
-                        let mut task = lock.remove(&task_key).unwrap();
+                        let mut borrow_mut = task_scheduler.pending_tasks.borrow_mut();
+                        let mut task = borrow_mut.remove(&task_key).unwrap();
                         task.status = TaskStatus::completed(now_timestamp_secs);
                         Some(task)
                     }
                     Err(err) => {
-                        let mut lock = task_scheduler.pending_tasks.lock();
-                        if let Some(updated_task) = lock.get(&task.id) {
+                        let mut borrow_mut = task_scheduler.pending_tasks.borrow_mut();
+                        if let Some(updated_task) = borrow_mut.get(&task.id) {
                             task.options = updated_task.options;
                         }
                         task.options.failures += 1;
@@ -207,14 +207,14 @@ where
                             task.options.execute_after_timestamp_in_secs =
                                 now_timestamp_secs + (retry_delay as u64);
                             task.status = TaskStatus::waiting(now_timestamp_secs);
-                            lock.insert(task_key, task);
+                            borrow_mut.insert(task_key, task);
                             None
                         } else {
                             debug!(
                                 "Scheduler - Task {} execution failed. Status changed: Running -> Failed",
                                 task_key
                             );
-                            let mut task = lock.remove(&task_key).unwrap();
+                            let mut task = borrow_mut.remove(&task_key).unwrap();
                             task.status = TaskStatus::failed(now_timestamp_secs, err);
                             Some(task)
                         }
@@ -232,9 +232,9 @@ where
 
     /// Returns the next task id.
     fn next_task_id(&self) -> u64 {
-        let mut lock = self.task_id_sequence.lock();
-        let id = *lock.get();
-        lock.set(id + 1);
+        let mut borrow_mut = self.task_id_sequence.borrow_mut();
+        let id = *borrow_mut.get();
+        borrow_mut.set(id + 1);
         id
     }
 
@@ -314,9 +314,9 @@ where
 {
     fn append_task(&self, task: ScheduledTask<T>) -> u64 {
         let time_secs = time_secs();
-        let mut lock = self.pending_tasks.lock();
+        let mut borrow_mut = self.pending_tasks.borrow_mut();
         let key = self.next_task_id();
-        lock.insert(
+        borrow_mut.insert(
             key,
             InnerScheduledTask::with_status(
                 key,
@@ -341,21 +341,21 @@ where
     }
 
     fn get_task(&self, task_id: u64) -> Option<InnerScheduledTask<T>> {
-        self.pending_tasks.lock().get(&task_id)
+        self.pending_tasks.borrow().get(&task_id)
     }
 
     fn reschedule(&self, task_id: u64, options: TaskOptions) {
-        let mut lock = self.pending_tasks.lock();
-        let Some(mut task) = lock.get(&task_id) else {
+        let mut borrow_mut = self.pending_tasks.borrow_mut();
+        let Some(mut task) = borrow_mut.get(&task_id) else {
             return;
         };
 
         task.options = options;
-        lock.insert(task_id, task);
+        borrow_mut.insert(task_id, task);
     }
 
     fn find_id(&self, filter: &dyn Fn(T) -> bool) -> Option<u64> {
-        self.pending_tasks.lock().iter().find_map(
+        self.pending_tasks.borrow().iter().find_map(
             |(id, task)| {
                 if filter(task.task) { Some(id) } else { None }
             },
@@ -369,7 +369,6 @@ mod test {
     use super::*;
 
     mod test_execution {
-        use std::cell::RefCell;
         use std::collections::HashMap;
         use std::future::Future;
         use std::pin::Pin;
@@ -384,7 +383,7 @@ mod test {
         use super::*;
 
         thread_local! {
-            pub static STATE: Mutex<HashMap<u64, Vec<String>>> = Mutex::new(HashMap::new())
+            pub static STATE: RefCell<HashMap<u64, Vec<String>>> = RefCell::new(HashMap::new())
         }
 
         #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -411,7 +410,7 @@ mod test {
                             let msg = format!("{} - StepOne", id);
                             println!("{}", msg);
                             STATE.with(|state| {
-                                let mut state = state.lock();
+                                let mut state = state.borrow_mut();
                                 let entry = state.entry(id).or_default();
                                 entry.push(msg);
                             });
@@ -427,7 +426,7 @@ mod test {
                             let msg = format!("{} - StepTwo", id);
                             println!("{}", msg);
                             STATE.with(|state| {
-                                let mut state = state.lock();
+                                let mut state = state.borrow_mut();
                                 let entry = state.entry(id).or_default();
                                 entry.push(msg);
                             });
@@ -445,7 +444,7 @@ mod test {
                             println!("{}", msg);
                             tokio::time::sleep(Duration::from_millis(10)).await;
                             STATE.with(|state| {
-                                let mut state = state.lock();
+                                let mut state = state.borrow_mut();
                                 let entry = state.entry(id).or_default();
                                 entry.push(msg);
                             });
@@ -476,7 +475,7 @@ mod test {
                         scheduler.run(ctx.clone()).unwrap();
                         tokio::time::sleep(Duration::from_millis(100)).await;
                         STATE.with(|state| {
-                            let state = state.lock();
+                            let state = state.borrow_mut();
                             let messages = state.get(&id).cloned().unwrap_or_default();
                             if messages.len() == 4 {
                                 completed = true;
@@ -524,7 +523,7 @@ mod test {
                         scheduler.run(ctx.clone()).unwrap();
                         tokio::time::sleep(Duration::from_millis(100)).await;
                         STATE.with(|state| {
-                            let state = state.lock();
+                            let state = state.borrow_mut();
                             let messages = state.get(&id).cloned().unwrap_or_default();
                             if messages.len() == 4 {
                                 completed = true;
@@ -561,7 +560,7 @@ mod test {
         use crate::task::TaskOptions;
 
         thread_local! {
-            pub static STATE: Mutex<HashMap<u64, Vec<String>>> = Mutex::new(HashMap::new())
+            pub static STATE: RefCell<HashMap<u64, Vec<String>>> = RefCell::new(HashMap::new())
         }
 
         #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -584,7 +583,7 @@ mod test {
                             let msg = format!("{} - StepOne", id);
                             println!("{}", msg);
                             STATE.with(|state| {
-                                let mut state = state.lock();
+                                let mut state = state.borrow_mut();
                                 let entry = state.entry(id).or_default();
                                 entry.push(msg);
                             });
@@ -619,19 +618,19 @@ mod test {
                         scheduler.run_with_timestamp((), timestamp + i).unwrap();
                         tokio::time::sleep(Duration::from_millis(25)).await;
                         STATE.with(|state| {
-                            let state = state.lock();
+                            let state = state.borrow_mut();
                             assert!(state.get(&id).cloned().unwrap_or_default().is_empty());
-                            assert_eq!(1, scheduler.pending_tasks.lock().len());
+                            assert_eq!(1, scheduler.pending_tasks.borrow().len());
                         });
                     }
 
                     scheduler.run_with_timestamp((), timestamp + 11).unwrap();
                     tokio::time::sleep(Duration::from_millis(25)).await;
                     STATE.with(|state| {
-                        let state = state.lock();
+                        let state = state.borrow_mut();
                         let messages = state.get(&id).cloned().unwrap_or_default();
                         assert_eq!(messages, vec![format!("{} - StepOne", id),]);
-                        assert!(scheduler.pending_tasks.lock().is_empty());
+                        assert!(scheduler.pending_tasks.borrow().is_empty());
                     });
                 })
                 .await;
@@ -660,7 +659,7 @@ mod test {
         }
 
         thread_local! {
-            static STATE: Mutex<HashMap<u64, Output>> = Mutex::new(HashMap::new());
+            static STATE: RefCell<HashMap<u64, Output>> = RefCell::new(HashMap::new());
         }
 
         #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -682,7 +681,7 @@ mod test {
                         let fails = *fails;
                         Box::pin(async move {
                             STATE.with(|state| {
-                                let mut state = state.lock();
+                                let mut state = state.borrow_mut();
                                 let output = state.entry(id).or_default();
                                 if fails > output.failures {
                                     output.failures += 1;
@@ -722,7 +721,7 @@ mod test {
                 let tries_before_failure = self.tries_before_failure;
                 Box::pin(async move {
                     STATE.with(|state| {
-                        let mut state = state.lock();
+                        let mut state = state.borrow_mut();
                         let output = state.entry(id).or_default();
                         if output.failures >= tries_before_failure {
                             Err(SchedulerError::Unrecoverable("".into()))
@@ -762,7 +761,7 @@ mod test {
                         scheduler.run(()).unwrap();
                         tokio::time::sleep(Duration::from_millis(25)).await;
                         STATE.with(|state| {
-                            let state = state.lock();
+                            let state = state.borrow_mut();
                             let output = state.get(&id).cloned().unwrap_or_default();
                             assert_eq!(output.failures, i);
                             assert_eq!(output.messages.len(), i as usize);
@@ -771,7 +770,7 @@ mod test {
                                 Some(&format!("{} - StepOne - Failure {}", id, i))
                             );
                         });
-                        let pending_tasks = scheduler.pending_tasks.lock();
+                        let pending_tasks = scheduler.pending_tasks.borrow();
                         assert_eq!(pending_tasks.len(), 1);
                         assert_eq!(pending_tasks.get(&0).unwrap().options.failures, i);
                     }
@@ -781,7 +780,7 @@ mod test {
                     tokio::time::sleep(Duration::from_millis(25)).await;
 
                     STATE.with(|state| {
-                        let state = state.lock();
+                        let state = state.borrow_mut();
                         let output = state.get(&id).cloned().unwrap_or_default();
                         assert_eq!(output.failures, 4);
                         assert_eq!(
@@ -793,7 +792,7 @@ mod test {
                                 format!("{} - StepOne - Failure 4", id),
                             ]
                         );
-                        assert_eq!(scheduler.pending_tasks.lock().len(), 0);
+                        assert_eq!(scheduler.pending_tasks.borrow().len(), 0);
                     });
                 })
                 .await;
@@ -828,7 +827,7 @@ mod test {
                     }
 
                     STATE.with(|state| {
-                        let state = state.lock();
+                        let state = state.borrow_mut();
                         let output = state.get(&id).cloned().unwrap_or_default();
                         assert_eq!(
                             output.messages,
@@ -838,7 +837,7 @@ mod test {
                                 format!("{} - StepOne - Success", id),
                             ]
                         );
-                        assert_eq!(scheduler.pending_tasks.lock().len(), 0);
+                        assert_eq!(scheduler.pending_tasks.borrow().len(), 0);
                     });
                 })
                 .await;
@@ -872,7 +871,7 @@ mod test {
                     tokio::time::sleep(Duration::from_millis(25)).await;
 
                     {
-                        let pending_tasks = scheduler.pending_tasks.lock();
+                        let pending_tasks = scheduler.pending_tasks.borrow();
                         assert_eq!(pending_tasks.len(), 1);
                         assert_eq!(pending_tasks.get(&0).unwrap().options.failures, 1);
                         assert!(
@@ -933,7 +932,7 @@ mod test {
                     // beware that the the first execution is not a retry
                     scheduler.run(()).unwrap();
                     tokio::time::sleep(Duration::from_millis(25)).await;
-                    let pending_tasks = scheduler.pending_tasks.lock();
+                    let pending_tasks = scheduler.pending_tasks.borrow();
                     assert_eq!(pending_tasks.len(), 0);
                 })
                 .await;
@@ -980,7 +979,7 @@ mod test {
                     }
 
                     STATE.with(|state| {
-                        let state = state.lock();
+                        let state = state.borrow_mut();
                         let output = state.get(&id).cloned().unwrap_or_default();
                         assert_eq!(
                             output.messages,
@@ -990,7 +989,7 @@ mod test {
                                 format!("{} - StepOne - Success", id),
                             ]
                         );
-                        assert_eq!(scheduler.pending_tasks.lock().len(), 0);
+                        assert_eq!(scheduler.pending_tasks.borrow().len(), 0);
                     });
                 })
                 .await;
@@ -1033,7 +1032,7 @@ mod test {
                         scheduler.run(()).unwrap();
                         tokio::time::sleep(Duration::from_millis(25)).await;
                         STATE.with(|state| {
-                            let state = state.lock();
+                            let state = state.borrow_mut();
                             let output = state.get(&id).cloned().unwrap_or_default();
                             assert_eq!(output.failures, i);
                             assert_eq!(output.messages.len(), i as usize);
@@ -1042,7 +1041,7 @@ mod test {
                                 Some(&format!("{} - StepOne - Failure {}", id, i))
                             );
                         });
-                        let pending_tasks = scheduler.pending_tasks.lock();
+                        let pending_tasks = scheduler.pending_tasks.borrow();
                         assert_eq!(pending_tasks.len(), 1);
                         assert_eq!(pending_tasks.get(&0).unwrap().options.failures, i);
                     }
@@ -1052,7 +1051,7 @@ mod test {
                     tokio::time::sleep(Duration::from_millis(25)).await;
 
                     STATE.with(|state| {
-                        let state = state.lock();
+                        let state = state.borrow_mut();
                         let output = state.get(&id).cloned().unwrap_or_default();
                         assert_eq!(output.failures, 4);
                         assert_eq!(
@@ -1064,7 +1063,7 @@ mod test {
                                 format!("{} - StepOne - Failure 4", id),
                             ]
                         );
-                        assert_eq!(scheduler.pending_tasks.lock().len(), 0);
+                        assert_eq!(scheduler.pending_tasks.borrow().len(), 0);
                     });
                 })
                 .await;
@@ -1099,7 +1098,7 @@ mod test {
                     scheduler.run(()).unwrap();
                     tokio::time::sleep(Duration::from_millis(25)).await;
 
-                    let pending_tasks = scheduler.pending_tasks.lock();
+                    let pending_tasks = scheduler.pending_tasks.borrow();
                     assert!(pending_tasks.is_empty());
                 })
                 .await;
@@ -1133,14 +1132,14 @@ mod test {
                         scheduler.run(()).unwrap();
                         tokio::time::sleep(Duration::from_millis(25)).await;
 
-                        let pending_tasks = scheduler.pending_tasks.lock();
+                        let pending_tasks = scheduler.pending_tasks.borrow();
                         assert!(!pending_tasks.is_empty());
                     }
 
                     scheduler.run(()).unwrap();
                     tokio::time::sleep(Duration::from_millis(25)).await;
 
-                    let pending_tasks = scheduler.pending_tasks.lock();
+                    let pending_tasks = scheduler.pending_tasks.borrow();
                     assert!(pending_tasks.is_empty());
                 })
                 .await;
