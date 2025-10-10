@@ -15,9 +15,7 @@ pub struct Rfc3339Timestamp {
 
 impl Rfc3339Timestamp {
     pub fn new(time: std::time::SystemTime) -> Self {
-        Rfc3339Timestamp {
-            time,
-        }
+        Rfc3339Timestamp { time }
     }
 }
 

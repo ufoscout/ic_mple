@@ -82,7 +82,7 @@ pub fn post_upgrade() {
 }
 
 fn set_timers() {
-    ic_cdk_timers::set_timer_interval(Duration::from_millis(10), || do_run_scheduler());
+    ic_cdk_timers::set_timer_interval(Duration::from_millis(10), do_run_scheduler);
 }
 
 #[query]

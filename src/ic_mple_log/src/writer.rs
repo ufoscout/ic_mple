@@ -43,7 +43,7 @@ pub struct ConsoleWriter<IC: IcTrait = IcApi> {
 
 impl Writer for ConsoleWriter {
     fn print(&self, buf: &Buffer) -> std::io::Result<()> {
-       self.ic.print(String::from_utf8_lossy(buf.bytes()));
+        self.ic.print(String::from_utf8_lossy(buf.bytes()));
         Ok(())
     }
 }

@@ -149,10 +149,10 @@ mod tests {
         assert_eq!(Some(item), vec.get(0));
     }
 
-        #[test]
+    #[test]
     fn should_reuse_existing_data_on_init() {
         let memory = VectorMemory::default();
-        
+
         {
             let mut log = VecExt::init(memory.clone());
             log.push(&Array([1u8, 1]))
@@ -168,7 +168,7 @@ mod tests {
     #[test]
     fn should_erase_existing_data_on_new() {
         let memory = VectorMemory::default();
-        
+
         {
             let mut log = VecExt::new(memory.clone());
             log.push(&Array([1u8, 1]));

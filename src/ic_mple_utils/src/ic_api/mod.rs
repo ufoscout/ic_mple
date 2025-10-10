@@ -35,7 +35,9 @@ pub trait IcTrait: Clone {
     fn time_nanos(&self) -> u64;
 
     /// Gets current timestamp, in seconds since the epoch (1970-01-01)
-    fn time_secs(&self) -> u64 { self.time_nanos() / E_9 }
+    fn time_secs(&self) -> u64 {
+        self.time_nanos() / E_9
+    }
 
     /// Returns the current SystemTime
     fn current_system_time(&self) -> SystemTime {
@@ -78,7 +80,7 @@ impl IcTrait for IcPlatform {
     fn print<S: std::convert::AsRef<str>>(&self, s: S) {
         ic_cdk::api::debug_print(s)
     }
-    
+
     fn spawn_detached<F: 'static + Future<Output = ()>>(&self, future: F) {
         ic_cdk_timers::set_timer(std::time::Duration::from_millis(0), || {
             spawn(future);

@@ -48,7 +48,6 @@ where
     pub fn new(pending_tasks: P, task_id_sequence: S) -> Self {
         Self::new_with_ic(pending_tasks, task_id_sequence, IcApi::default())
     }
-
 }
 
 impl<T, P, S, IC: IcTrait + 'static> Scheduler<T, P, S, IC>
@@ -70,7 +69,7 @@ where
             on_completion_callback: Arc::new(None),
             running_task_timeout_secs: AtomicU64::new(DEFAULT_RUNNING_TASK_TIMEOUT_SECS),
             task_id_sequence: Arc::new(RefCell::new(task_id_sequence)),
-            ic
+            ic,
         }
     }
 
@@ -259,7 +258,6 @@ where
         borrow_mut.set(id + 1);
         id
     }
-
 }
 
 pub trait TaskScheduler<T: 'static + Task> {

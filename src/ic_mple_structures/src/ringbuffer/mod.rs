@@ -619,52 +619,44 @@ mod tests {
         })
     }
 
-            #[test]
+    #[test]
     fn should_reuse_existing_data_on_init() {
         let memory_1 = VectorMemory::default();
         let memory_2 = VectorMemory::default();
         {
             let mut buffer = StableRingBuffer::init(
-            memory_1.clone(),
-            memory_2.clone(),
-            NonZeroU64::new(2).unwrap(),
-        );
+                memory_1.clone(),
+                memory_2.clone(),
+                NonZeroU64::new(2).unwrap(),
+            );
             buffer.push(&100u32);
-
         }
 
         {
-                    let mut buffer = StableRingBuffer::init(
-            memory_1,
-            memory_2,
-            NonZeroU64::new(2).unwrap(),
-                    );
-        assert!(!buffer.is_empty());
+            let mut buffer =
+                StableRingBuffer::init(memory_1, memory_2, NonZeroU64::new(2).unwrap());
+            assert!(!buffer.is_empty());
             assert_eq!(Some(100u32), buffer.pop());
         }
     }
 
-        #[test]
+    #[test]
     fn should_erase_existing_data_on_new() {
         let memory_1 = VectorMemory::default();
         let memory_2 = VectorMemory::default();
         {
             let mut buffer = StableRingBuffer::new(
-            memory_1.clone(),
-            memory_2.clone(),
-            NonZeroU64::new(2).unwrap(),
-        );
+                memory_1.clone(),
+                memory_2.clone(),
+                NonZeroU64::new(2).unwrap(),
+            );
             buffer.push(&100u32);
-
         }
 
         {
-                    let mut buffer = StableRingBuffer::<u32, _,_>::new(
-            memory_1,
-            memory_2,
-            NonZeroU64::new(2).unwrap(),
-                    );
-        assert!(buffer.is_empty());
+            let mut buffer =
+                StableRingBuffer::<u32, _, _>::new(memory_1, memory_2, NonZeroU64::new(2).unwrap());
+            assert!(buffer.is_empty());
             assert_eq!(None, buffer.pop());
         }
     }

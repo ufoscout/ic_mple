@@ -403,7 +403,6 @@ mod tests {
             let cache_items = 2;
             let mut map = CachedBTreeMap::<u32, Array<2>, _>::init(memory.clone(), cache_items);
             map.insert(1, Array([1u8, 1]));
-
         }
 
         {
@@ -414,14 +413,13 @@ mod tests {
         }
     }
 
-        #[test]
+    #[test]
     fn should_erase_existing_data_on_new() {
         let memory = VectorMemory::default();
         {
             let cache_items = 2;
             let mut map = CachedBTreeMap::<u32, Array<2>, _>::init(memory.clone(), cache_items);
             map.insert(1, Array([1u8, 1]));
-
         }
 
         {
@@ -431,5 +429,4 @@ mod tests {
             assert_eq!(None, map.get(&1));
         }
     }
-
 }

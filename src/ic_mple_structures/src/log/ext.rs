@@ -73,7 +73,7 @@ mod tests {
     fn should_reuse_existing_data_on_init() {
         let memory_1 = VectorMemory::default();
         let memory_2 = VectorMemory::default();
-        
+
         let index = {
             let mut log = LogExt::init(memory_1.clone(), memory_2.clone());
             log.append(Array([1u8, 1])).unwrap()
@@ -90,7 +90,7 @@ mod tests {
     fn should_erase_existing_data_on_new() {
         let memory_1 = VectorMemory::default();
         let memory_2 = VectorMemory::default();
-        
+
         let index = {
             let mut log = LogExt::new(memory_1.clone(), memory_2.clone());
             log.append(Array([1u8, 1])).unwrap()

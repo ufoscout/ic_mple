@@ -452,45 +452,43 @@ mod tests {
         assert!(map.is_empty());
     }
 
-        #[test]
+    #[test]
     fn should_reuse_existing_data_on_init() {
         let memory = VectorMemory::default();
         {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::init(
-            memory.clone(),
-            DefaultCodec::default(),
-        );
+            let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::init(
+                memory.clone(),
+                DefaultCodec::default(),
+            );
             map.insert(1, Array([1u8, 1]));
-
         }
 
         {
-        let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::init(
-            memory,
-            DefaultCodec::default(),
-        );  
-        assert!(!map.is_empty());
+            let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::init(
+                memory,
+                DefaultCodec::default(),
+            );
+            assert!(!map.is_empty());
             assert_eq!(Some(Array([1u8, 1])), map.get(&1));
         }
     }
 
-        #[test]
+    #[test]
     fn should_erase_existing_data_on_new() {
         let memory = VectorMemory::default();
         {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
-            memory.clone(),
-            DefaultCodec::default(),
-        );
+            let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+                memory.clone(),
+                DefaultCodec::default(),
+            );
             map.insert(1, Array([1u8, 1]));
-
         }
 
         {
-        let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
-            memory,
-            DefaultCodec::default(),
-        );  
+            let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _, _>::new(
+                memory,
+                DefaultCodec::default(),
+            );
             assert!(map.is_empty());
             assert_eq!(None, map.get(&1));
         }

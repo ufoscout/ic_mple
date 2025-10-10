@@ -1,4 +1,7 @@
-use std::{sync::{Arc, Mutex}, time::SystemTime};
+use std::{
+    sync::{Arc, Mutex},
+    time::SystemTime,
+};
 
 use candid::{CandidType, Deserialize, Principal};
 
@@ -61,11 +64,11 @@ impl IcMock {
 
 impl IcTrait for IcMock {
     fn canister_self(&self) -> candid::Principal {
-        self.canister_id.lock().unwrap().clone()
+        *self.canister_id.lock().unwrap()
     }
 
     fn canister_cycle_balance(&self) -> u128 {
-        self.canister_cycle_balance.lock().unwrap().clone()
+        *self.canister_cycle_balance.lock().unwrap()
     }
 
     fn time_nanos(&self) -> u64 {
@@ -84,7 +87,9 @@ impl IcTrait for IcMock {
 
         #[cfg(not(feature = "tokio"))]
         {
-            println!("WARNING: spawn was called on the IcMockApi but tokio feature is not enabled so it will be ignored. To allow spawn to work, enable the tokio feature of ic_mple_utils");
+            println!(
+                "WARNING: spawn was called on the IcMockApi but tokio feature is not enabled so it will be ignored. To allow spawn to work, enable the tokio feature of ic_mple_utils"
+            );
         }
     }
 

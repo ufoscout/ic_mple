@@ -542,32 +542,32 @@ mod test {
         assert_eq!(map.len(), 0);
     }
 
-            #[test]
+    #[test]
     fn should_reuse_existing_data_on_init() {
         let memory = VectorMemory::default();
         {
-        let mut map = StableMultimap::init(memory.clone());
-        map.insert(&1u64, &1u64, Array([1u8, 1]));
+            let mut map = StableMultimap::init(memory.clone());
+            map.insert(&1u64, &1u64, Array([1u8, 1]));
         }
 
         {
-        let map = StableMultimap::init(memory.clone());
-        assert!(!map.is_empty());
+            let map = StableMultimap::init(memory.clone());
+            assert!(!map.is_empty());
             assert_eq!(Some(Array([1u8, 1])), map.get(&1u64, &1u64));
         }
     }
 
-        #[test]
+    #[test]
     fn should_erase_existing_data_on_new() {
         let memory = VectorMemory::default();
         {
-        let mut map = StableMultimap::new(memory.clone());
-        map.insert(&1u64, &1u64, Array([1u8, 1]));
+            let mut map = StableMultimap::new(memory.clone());
+            map.insert(&1u64, &1u64, Array([1u8, 1]));
         }
 
         {
-        let map = StableMultimap::<_,_,Array<2>,_>::new(memory.clone());
-        assert!(map.is_empty());
+            let map = StableMultimap::<_, _, Array<2>, _>::new(memory.clone());
+            assert!(map.is_empty());
             assert_eq!(None, map.get(&1u64, &1u64));
         }
     }

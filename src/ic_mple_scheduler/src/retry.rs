@@ -20,9 +20,7 @@ impl Default for RetryStrategy {
     }
 }
 
-
 impl RetryStrategy {
-
     pub fn new() -> Self {
         Self::default()
     }
@@ -343,55 +341,58 @@ pub mod test {
             RetryPolicy::MaxRetries { retries: 1 },
             BackoffPolicy::Fixed { secs: 34 },
         );
-        assert_eq!((true, 0), retry_strategy.should_retry(0,0));
-        assert_eq!((true, 34), retry_strategy.should_retry(0,1));
-        assert_eq!((false, 34), retry_strategy.should_retry(0,2));
+        assert_eq!((true, 0), retry_strategy.should_retry(0, 0));
+        assert_eq!((true, 34), retry_strategy.should_retry(0, 1));
+        assert_eq!((false, 34), retry_strategy.should_retry(0, 2));
     }
 
     #[test]
     fn retry_policy_edge_cases() {
-            assert!(RetryPolicy::None.should_retry(0, 0));
-            assert!(!RetryPolicy::None.should_retry(0, 1));
-            assert!(!RetryPolicy::None.should_retry(0, u32::MAX));
-            assert!(!RetryPolicy::None.should_retry(0, u32::MAX - 1));
+        assert!(RetryPolicy::None.should_retry(0, 0));
+        assert!(!RetryPolicy::None.should_retry(0, 1));
+        assert!(!RetryPolicy::None.should_retry(0, u32::MAX));
+        assert!(!RetryPolicy::None.should_retry(0, u32::MAX - 1));
 
-            assert!(RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, 0));
-            assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, 1));
-            assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, u32::MAX - 1));
-            assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, u32::MAX));
+        assert!(RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, 0));
+        assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, 1));
+        assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, u32::MAX - 1));
+        assert!(!RetryPolicy::MaxRetries { retries: 0 }.should_retry(0, u32::MAX));
 
-            assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, 0));
-            assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, 1));
-            assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, u32::MAX - 1));
-            assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, u32::MAX));
+        assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, 0));
+        assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, 1));
+        assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, u32::MAX - 1));
+        assert!(RetryPolicy::MaxRetries { retries: u32::MAX }.should_retry(0, u32::MAX));
 
-            assert!(RetryPolicy::Infinite.should_retry(0, 0));
-            assert!(RetryPolicy::Infinite.should_retry(0, 1));
-            assert!(RetryPolicy::Infinite.should_retry(0, u32::MAX));
-            assert!(RetryPolicy::Infinite.should_retry(0, u32::MAX - 1));
+        assert!(RetryPolicy::Infinite.should_retry(0, 0));
+        assert!(RetryPolicy::Infinite.should_retry(0, 1));
+        assert!(RetryPolicy::Infinite.should_retry(0, u32::MAX));
+        assert!(RetryPolicy::Infinite.should_retry(0, u32::MAX - 1));
 
-            assert!(RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(0, 0));
-            assert!(!RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(1, 1));
+        assert!(RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(0, 0));
+        assert!(!RetryPolicy::Timeout { timeout_ts: 0 }.should_retry(1, 1));
 
-            let time = 1000;
-            assert!(!RetryPolicy::Timeout {
+        let time = 1000;
+        assert!(
+            !RetryPolicy::Timeout {
                 timeout_ts: time - 1
             }
-            .should_retry(time, 1));
-            
-            assert!(RetryPolicy::Timeout {
-                timeout_ts: time
-            }
-            .should_retry(time, 1));
-            
-            assert!(RetryPolicy::Timeout {
+            .should_retry(time, 1)
+        );
+
+        assert!(RetryPolicy::Timeout { timeout_ts: time }.should_retry(time, 1));
+
+        assert!(
+            RetryPolicy::Timeout {
                 timeout_ts: time + 1
             }
-            .should_retry(time, 1));
-            
-            assert!(RetryPolicy::Timeout {
+            .should_retry(time, 1)
+        );
+
+        assert!(
+            RetryPolicy::Timeout {
                 timeout_ts: u64::MAX
             }
-            .should_retry(time, 1));
+            .should_retry(time, 1)
+        );
     }
 }
