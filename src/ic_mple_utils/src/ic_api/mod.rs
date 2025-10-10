@@ -9,9 +9,6 @@ use serde::Deserialize;
 
 pub mod mock;
 
-#[cfg(all(not(target_family = "wasm"), feature = "ic_mock"))]
-pub mod tokio_local;
-
 const E_9: u64 = 1_000_000_000;
 
 /// Returns the IC API, or the TokioIcApi if non in wasm and the ic_mock feature is enabled
@@ -22,11 +19,8 @@ pub fn ic() -> IcApi {
 #[cfg(target_family = "wasm")]
 pub type IcApi = IcPlatform;
 
-#[cfg(all(not(target_family = "wasm"), feature = "ic_mock"))]
-pub type IcApi = crate::ic_api::tokio_local::TokioIcApi;
-
-#[cfg(all(not(target_family = "wasm"), not(feature = "ic_mock")))]
-pub type IcApi = IcPlatform;
+#[cfg(not(target_family = "wasm"))]
+pub type IcApi = crate::ic_api::mock::IcMock;
 
 /// A wrapper trait for the IC API.
 /// It allows us to use a mock or non-wasm-based implementation.
@@ -41,10 +35,13 @@ pub trait IcTrait: Clone {
     fn time_nanos(&self) -> u64;
 
     /// Gets current timestamp, in seconds since the epoch (1970-01-01)
-    fn time_secs(&self) -> u64;
+    fn time_secs(&self) -> u64 { self.time_nanos() / E_9 }
 
     /// Returns the current SystemTime
-    fn current_system_time(&self) -> SystemTime;
+    fn current_system_time(&self) -> SystemTime {
+        let timestamp_in_nanos = self.time_nanos();
+        std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_nanos(timestamp_in_nanos)
+    }
 
     /// Spawn an asynchronous task to run in the background.
     fn spawn<F: 'static + Future<Output = ()>>(&self, future: F);
@@ -67,13 +64,7 @@ impl IcTrait for IcPlatform {
     }
 
     fn time_nanos(&self) -> u64 {
-        // ic_cdk::println!("time_nanos: {}", ic_cdk::api::time());
         ic_cdk::api::time()
-    }
-
-    fn time_secs(&self) -> u64 {
-        // ic_cdk::println!("time_secs: {}", ic_cdk::api::time() / E_9);
-        ic_cdk::api::time() / E_9
     }
 
     fn spawn<F: 'static + Future<Output = ()>>(&self, future: F) {
@@ -82,11 +73,6 @@ impl IcTrait for IcPlatform {
 
     fn canister_cycle_balance(&self) -> u128 {
         canister_cycle_balance()
-    }
-
-    fn current_system_time(&self) -> SystemTime {
-        let timestamp_in_nanos = self.time_nanos();
-        std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_nanos(timestamp_in_nanos)
     }
 
     fn print<S: std::convert::AsRef<str>>(&self, s: S) {

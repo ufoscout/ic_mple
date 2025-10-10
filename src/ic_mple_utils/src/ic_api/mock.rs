@@ -1,34 +1,50 @@
-use std::{cell::RefCell, rc::Rc, time::{Duration, SystemTime}};
+use std::{cell::RefCell, rc::Rc, time::SystemTime};
 
-use candid::{CandidType, Principal};
+use candid::{CandidType, Deserialize, Principal};
 
-use crate::ic_api::{IcTrait, E_9};
+use crate::ic_api::IcTrait;
 
-/// An implementation of the IC API for local development
+/// The time strategy to use for the mocked IC API
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
+pub enum TimeStrategy {
+    /// Fixed time
+    Fixed { timestamp_nanos: u64 },
+    /// Current system time
+    System,
+}
+
+/// An mocked implementation of the IC API for local development
 /// This runs on the host machine instead of the IC
 /// This is useful for local development and testing
 /// This should not be used in production as most of the returned data is fake
 #[derive(Clone, Debug, CandidType, PartialEq, Eq)]
-pub struct MockIcApi {
+pub struct IcMock {
     canister_id: Rc<RefCell<candid::Principal>>,
     canister_cycle_balance: Rc<RefCell<u128>>,
-    time_nanos: Rc<RefCell<u64>>,
+    time_strategy: Rc<RefCell<TimeStrategy>>,
 }
 
-impl Default for MockIcApi {
+impl Default for IcMock {
     fn default() -> Self {
         Self {
             canister_id: Rc::new(RefCell::new(Principal::anonymous())),
-            canister_cycle_balance: Rc::new(RefCell::new(Default::default())),
-            time_nanos: Rc::new(RefCell::new(0)),
+            canister_cycle_balance: Default::default(),
+            time_strategy: Rc::new(RefCell::new(TimeStrategy::System)),
         }
     }
 }
 
-impl MockIcApi {
+impl IcMock {
+    pub fn new(canister_id: Principal, canister_cycle_balance: u128) -> Self {
+        Self {
+            canister_id: Rc::new(RefCell::new(canister_id)),
+            canister_cycle_balance: Rc::new(RefCell::new(canister_cycle_balance)),
+            time_strategy: Rc::new(RefCell::new(TimeStrategy::System)),
+        }
+    }
 
     /// Sets the Principal of the canister to use when interacting with the IC API.
-    pub fn set_canister_id(&self, canister_id: Principal) {
+    pub fn set_canister_id(&mut self, canister_id: Principal) {
         *self.canister_id.borrow_mut() = canister_id;
     }
 
@@ -37,13 +53,13 @@ impl MockIcApi {
         *self.canister_cycle_balance.borrow_mut() = canister_cycle_balance;
     }
 
-    /// Sets the current time of the canister.
-    pub fn set_time_nanos(&self, time: u64) {
-        *self.time_nanos.borrow_mut() = time;
+    /// Sets the time strategy to use for the IC API.
+    pub fn set_time_strategy(&mut self, time_strategy: TimeStrategy) {
+        *self.time_strategy.borrow_mut() = time_strategy;
     }
 }
 
-impl IcTrait for MockIcApi {
+impl IcTrait for IcMock {
     fn canister_self(&self) -> candid::Principal {
         self.canister_id.borrow().clone()
     }
@@ -53,25 +69,29 @@ impl IcTrait for MockIcApi {
     }
 
     fn time_nanos(&self) -> u64 {
-        self.time_nanos.borrow().clone()
+        match *self.time_strategy.borrow() {
+            TimeStrategy::Fixed { timestamp_nanos } => timestamp_nanos,
+            TimeStrategy::System => SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .expect("get current timestamp error")
+                .as_nanos() as u64,
+        }
     }
 
-    fn time_secs(&self) -> u64 {
-        self.time_nanos() / E_9
-    }
+    fn spawn<F: 'static + Future<Output = ()>>(&self, future: F) {
+        #[cfg(feature = "tokio")]
+        tokio::task::spawn_local(future);
 
-    fn current_system_time(&self) -> std::time::SystemTime {
-        SystemTime::UNIX_EPOCH + Duration::from_nanos(self.time_nanos())
-    }
-
-    fn spawn<F: 'static + Future<Output = ()>>(&self, _future: F) {
-        
+        #[cfg(not(feature = "tokio"))]
+        {
+            println!("WARNING: spawn was called on the IcMockApi but tokio feature is not enabled so it will be ignored. To allow spawn to work, enable the tokio feature of ic_mple_utils");
+        }
     }
 
     fn print<S: std::convert::AsRef<str>>(&self, s: S) {
         println!("{}", s.as_ref())
     }
-    
+
     fn spawn_detached<F: 'static + Future<Output = ()>>(&self, future: F) {
         self.spawn(future);
     }

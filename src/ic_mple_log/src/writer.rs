@@ -2,11 +2,11 @@ use std::cell::RefCell;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use candid::CandidType;
+use ic_mple_utils::ic_api::{IcApi, IcTrait};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use serde::{Deserialize, Serialize};
 
 use crate::formatter::buffer::Buffer;
-use crate::platform;
 
 /// A trait for the object that consumes already formatted log line.
 pub trait Writer: Send + Sync {
@@ -36,11 +36,14 @@ impl Writer for MultiWriter {
 }
 
 /// Writer implementation that prints the given data to the console
-pub struct ConsoleWriter {}
+#[derive(Default)]
+pub struct ConsoleWriter<IC: IcTrait = IcApi> {
+    ic: IC,
+}
 
 impl Writer for ConsoleWriter {
     fn print(&self, buf: &Buffer) -> std::io::Result<()> {
-        platform::print(buf.bytes());
+       self.ic.print(String::from_utf8_lossy(buf.bytes()));
         Ok(())
     }
 }

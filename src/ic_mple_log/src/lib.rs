@@ -9,7 +9,6 @@ use formatter::FormatFn;
 use writer::{ConsoleWriter, InMemoryWriter, Logs, MultiWriter, Writer};
 
 mod formatter;
-mod platform;
 #[cfg(feature = "service")]
 pub mod service;
 mod settings;
@@ -358,7 +357,7 @@ pub fn init_log(settings: &LogSettings) -> Result<LoggerConfigHandle, LogError> 
     let mut builder = Builder::default().try_parse_filters(&settings.log_filter)?;
 
     if settings.enable_console {
-        builder = builder.add_writer(Box::new(ConsoleWriter {}));
+        builder = builder.add_writer(Box::new(ConsoleWriter::default()));
     }
 
     writer::InMemoryWriter::init_buffer(settings.in_memory_records, settings.max_record_length);

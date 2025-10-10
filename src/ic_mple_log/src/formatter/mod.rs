@@ -34,6 +34,7 @@ use std::{fmt, io};
 
 pub mod buffer;
 mod humantime;
+use ic_mple_utils::ic_api::{IcApi, IcTrait};
 use log::Record;
 
 use self::buffer::Buffer;
@@ -127,6 +128,7 @@ impl Builder {
                     indent: self.format_indent,
                     suffix: self.format_suffix,
                     formatter: buf,
+                    ic: IcApi::default(),
                 };
 
                 fmt.write(record)
@@ -140,7 +142,7 @@ type SubtleStyle = &'static str;
 /// The default format.
 ///
 /// This format needs to work with any combination of crate features.
-struct DefaultFormat<'a> {
+struct DefaultFormat<'a, IC: IcTrait = IcApi> {
     timestamp: bool,
     module_path: bool,
     target: bool,
@@ -149,6 +151,7 @@ struct DefaultFormat<'a> {
     indent: Option<usize>,
     formatter: &'a mut Formatter,
     suffix: &'a str,
+    ic: IC,
 }
 
 impl DefaultFormat<'_> {
@@ -195,7 +198,7 @@ impl DefaultFormat<'_> {
             return Ok(());
         }
 
-        let timestamp = Rfc3339Timestamp::now();
+        let timestamp = Rfc3339Timestamp::new(self.ic.current_system_time());
         self.write_header_value(timestamp)
     }
 
@@ -332,6 +335,7 @@ mod tests {
             indent: None,
             suffix: "\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("[INFO  test::path] log\nmessage\n", written);
@@ -350,6 +354,7 @@ mod tests {
             indent: None,
             suffix: "\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("log\nmessage\n", written);
@@ -368,6 +373,7 @@ mod tests {
             indent: Some(4),
             suffix: "\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("[INFO  test::path] log\n    message\n", written);
@@ -386,6 +392,7 @@ mod tests {
             indent: Some(0),
             suffix: "\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("[INFO  test::path] log\nmessage\n", written);
@@ -404,6 +411,7 @@ mod tests {
             indent: Some(4),
             suffix: "\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("log\n    message\n", written);
@@ -422,6 +430,7 @@ mod tests {
             indent: None,
             suffix: "\n\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("log\nmessage\n\n", written);
@@ -440,6 +449,7 @@ mod tests {
             indent: Some(4),
             suffix: "\n\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("log\n\n    message\n\n", written);
@@ -460,6 +470,7 @@ mod tests {
                 indent: None,
                 suffix: "\n",
                 formatter: &mut f,
+                ic: IcApi::default(),
             },
         );
 
@@ -479,6 +490,7 @@ mod tests {
             indent: None,
             suffix: "\n",
             formatter: &mut f,
+            ic: IcApi::default(),
         });
 
         assert_eq!("[INFO  test::path] log\nmessage\n", written);
@@ -499,6 +511,7 @@ mod tests {
                 indent: None,
                 suffix: "\n",
                 formatter: &mut f,
+                ic: IcApi::default(),
             },
         );
 

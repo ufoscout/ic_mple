@@ -2,8 +2,6 @@ use std::fmt;
 
 use humantime::format_rfc3339_nanos;
 
-use crate::platform;
-
 /// An [RFC3339] formatted timestamp.
 ///
 /// The timestamp implements [`Display`] and can be written to a [`Formatter`].
@@ -16,9 +14,9 @@ pub struct Rfc3339Timestamp {
 }
 
 impl Rfc3339Timestamp {
-    pub fn now() -> Self {
+    pub fn new(time: std::time::SystemTime) -> Self {
         Rfc3339Timestamp {
-            time: platform::current_system_time(),
+            time,
         }
     }
 }
