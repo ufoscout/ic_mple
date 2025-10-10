@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, time::SystemTime};
+use std::{sync::{Arc, Mutex}, time::SystemTime};
 
 use candid::{CandidType, Deserialize, Principal};
 
@@ -17,19 +17,19 @@ pub enum TimeStrategy {
 /// This runs on the host machine instead of the IC
 /// This is useful for local development and testing
 /// This should not be used in production as most of the returned data is fake
-#[derive(Clone, Debug, CandidType, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct IcMock {
-    canister_id: Rc<RefCell<candid::Principal>>,
-    canister_cycle_balance: Rc<RefCell<u128>>,
-    time_strategy: Rc<RefCell<TimeStrategy>>,
+    canister_id: Arc<Mutex<candid::Principal>>,
+    canister_cycle_balance: Arc<Mutex<u128>>,
+    time_strategy: Arc<Mutex<TimeStrategy>>,
 }
 
 impl Default for IcMock {
     fn default() -> Self {
         Self {
-            canister_id: Rc::new(RefCell::new(Principal::anonymous())),
+            canister_id: Arc::new(Mutex::new(Principal::anonymous())),
             canister_cycle_balance: Default::default(),
-            time_strategy: Rc::new(RefCell::new(TimeStrategy::System)),
+            time_strategy: Arc::new(Mutex::new(TimeStrategy::System)),
         }
     }
 }
@@ -37,39 +37,39 @@ impl Default for IcMock {
 impl IcMock {
     pub fn new(canister_id: Principal, canister_cycle_balance: u128) -> Self {
         Self {
-            canister_id: Rc::new(RefCell::new(canister_id)),
-            canister_cycle_balance: Rc::new(RefCell::new(canister_cycle_balance)),
-            time_strategy: Rc::new(RefCell::new(TimeStrategy::System)),
+            canister_id: Arc::new(Mutex::new(canister_id)),
+            canister_cycle_balance: Arc::new(Mutex::new(canister_cycle_balance)),
+            time_strategy: Arc::new(Mutex::new(TimeStrategy::System)),
         }
     }
 
     /// Sets the Principal of the canister to use when interacting with the IC API.
     pub fn set_canister_id(&mut self, canister_id: Principal) {
-        *self.canister_id.borrow_mut() = canister_id;
+        *self.canister_id.lock().unwrap() = canister_id;
     }
 
     /// Sets the current cycle balance of the canister.
     pub fn set_canister_cycle_balance(&mut self, canister_cycle_balance: u128) {
-        *self.canister_cycle_balance.borrow_mut() = canister_cycle_balance;
+        *self.canister_cycle_balance.lock().unwrap() = canister_cycle_balance;
     }
 
     /// Sets the time strategy to use for the IC API.
     pub fn set_time_strategy(&mut self, time_strategy: TimeStrategy) {
-        *self.time_strategy.borrow_mut() = time_strategy;
+        *self.time_strategy.lock().unwrap() = time_strategy;
     }
 }
 
 impl IcTrait for IcMock {
     fn canister_self(&self) -> candid::Principal {
-        self.canister_id.borrow().clone()
+        self.canister_id.lock().unwrap().clone()
     }
 
     fn canister_cycle_balance(&self) -> u128 {
-        self.canister_cycle_balance.borrow().clone()
+        self.canister_cycle_balance.lock().unwrap().clone()
     }
 
     fn time_nanos(&self) -> u64 {
-        match *self.time_strategy.borrow() {
+        match *self.time_strategy.lock().unwrap() {
             TimeStrategy::Fixed { timestamp_nanos } => timestamp_nanos,
             TimeStrategy::System => SystemTime::now()
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
@@ -78,9 +78,9 @@ impl IcTrait for IcMock {
         }
     }
 
-    fn spawn<F: 'static + Future<Output = ()>>(&self, future: F) {
+    fn spawn<F: 'static + Future<Output = ()>>(&self, _future: F) {
         #[cfg(feature = "tokio")]
-        tokio::task::spawn_local(future);
+        tokio::task::spawn_local(_future);
 
         #[cfg(not(feature = "tokio"))]
         {

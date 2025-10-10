@@ -24,7 +24,7 @@ thiserror = { workspace = true }
 candid = { workspace = true }
 ic_mple_client = { workspace = true, features = ["pocket-ic"]}
 ic_mple_pocket_ic = { workspace = true }
-# ic_mple_utils = { workspace = true, features = ["ic_mock"] }
+ic_mple_utils = { workspace = true, features = ["tokio"] }
 rand = { workspace = true }
 tokio = { workspace = true, features = ["rt", "macros", "time"] }
 

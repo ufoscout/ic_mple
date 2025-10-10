@@ -20,6 +20,7 @@ tokio = { workspace = true, optional = true }
 [features]
 default = []
 
-# Enables a tokio based implementation of the IC API for testing
+# Enables a tokio based implementation of the IC API for testing.
+# This emulates ic_cdk::future::spawn() during testing
 tokio = ["dep:tokio"]
 
