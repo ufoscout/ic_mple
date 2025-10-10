@@ -60,3 +60,46 @@ impl<T: Storable, M: Memory> LogStructure<T> for LogExt<T, M> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use ic_stable_structures::VectorMemory;
+
+    use crate::test_utils::Array;
+
+    use super::*;
+
+    #[test]
+    fn should_reuse_existing_data_on_init() {
+        let memory_1 = VectorMemory::default();
+        let memory_2 = VectorMemory::default();
+        
+        let index = {
+            let mut log = LogExt::init(memory_1.clone(), memory_2.clone());
+            log.append(Array([1u8, 1])).unwrap()
+        };
+
+        {
+            let log = LogExt::init(memory_1, memory_2);
+            assert!(!log.is_empty());
+            assert_eq!(Some(Array([1u8, 1])), log.get(index));
+        }
+    }
+
+    #[test]
+    fn should_erase_existing_data_on_new() {
+        let memory_1 = VectorMemory::default();
+        let memory_2 = VectorMemory::default();
+        
+        let index = {
+            let mut log = LogExt::new(memory_1.clone(), memory_2.clone());
+            log.append(Array([1u8, 1])).unwrap()
+        };
+
+        {
+            let log = LogExt::<Array<2>, _>::new(memory_1, memory_2);
+            assert!(log.is_empty());
+            assert_eq!(None, log.get(index));
+        }
+    }
+}

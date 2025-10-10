@@ -395,4 +395,41 @@ mod tests {
 
         assert!(map.is_empty());
     }
+
+    #[test]
+    fn should_reuse_existing_data_on_init() {
+        let memory = VectorMemory::default();
+        {
+            let cache_items = 2;
+            let mut map = CachedBTreeMap::<u32, Array<2>, _>::init(memory.clone(), cache_items);
+            map.insert(1, Array([1u8, 1]));
+
+        }
+
+        {
+            let cache_items = 2;
+            let map = CachedBTreeMap::<u32, Array<2>, _>::init(memory, cache_items);
+            assert!(!map.is_empty());
+            assert_eq!(Some(Array([1u8, 1])), map.get(&1));
+        }
+    }
+
+        #[test]
+    fn should_erase_existing_data_on_new() {
+        let memory = VectorMemory::default();
+        {
+            let cache_items = 2;
+            let mut map = CachedBTreeMap::<u32, Array<2>, _>::init(memory.clone(), cache_items);
+            map.insert(1, Array([1u8, 1]));
+
+        }
+
+        {
+            let cache_items = 2;
+            let map = CachedBTreeMap::<u32, Array<2>, _>::new(memory, cache_items);
+            assert!(map.is_empty());
+            assert_eq!(None, map.get(&1));
+        }
+    }
+
 }

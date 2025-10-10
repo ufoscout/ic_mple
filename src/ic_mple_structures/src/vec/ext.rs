@@ -78,6 +78,8 @@ mod tests {
 
     use ic_stable_structures::VectorMemory;
 
+    use crate::test_utils::Array;
+
     use super::*;
 
     #[test]
@@ -145,5 +147,37 @@ mod tests {
         let item = "I am an unbounded item".to_string();
         vec.push(&item);
         assert_eq!(Some(item), vec.get(0));
+    }
+
+        #[test]
+    fn should_reuse_existing_data_on_init() {
+        let memory = VectorMemory::default();
+        
+        {
+            let mut log = VecExt::init(memory.clone());
+            log.push(&Array([1u8, 1]))
+        };
+
+        {
+            let log = VecExt::init(memory);
+            assert!(!log.is_empty());
+            assert_eq!(Some(Array([1u8, 1])), log.get(0));
+        }
+    }
+
+    #[test]
+    fn should_erase_existing_data_on_new() {
+        let memory = VectorMemory::default();
+        
+        {
+            let mut log = VecExt::new(memory.clone());
+            log.push(&Array([1u8, 1]));
+        };
+
+        {
+            let log = VecExt::<Array<2>, _>::new(memory);
+            assert!(log.is_empty());
+            assert_eq!(None, log.get(0));
+        }
     }
 }
