@@ -4,11 +4,11 @@ use ic_stable_structures::{BTreeMap, Memory, Storable, btreemap};
 
 #[cfg(feature = "cached")]
 mod cached;
-// mod versioned;
+mod versioned;
 
 #[cfg(feature = "cached")]
 pub use cached::CachedBTreeMap;
-// pub use versioned::VersionedBTreeMap;
+pub use versioned::VersionedBTreeMap;
 
 pub trait BTreeMapStructure<K, V> {
     /// Return value associated with `key` from stable memory.
