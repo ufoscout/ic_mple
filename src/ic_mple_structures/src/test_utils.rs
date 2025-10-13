@@ -6,12 +6,12 @@ use ic_stable_structures::{Storable, storable::Bound};
 use crate::common::{Bounded, Codec, RefCodec};
 
 #[derive(Clone, CandidType, Deserialize, PartialEq, Eq, Debug)]
-pub enum VersionedUser {
+pub enum UserCodec {
     V1(UserV1),
     V2(UserV2),
 }
 
-impl Storable for VersionedUser {
+impl Storable for UserCodec {
     const BOUND: Bound = Bound::Unbounded;
 
     fn to_bytes(&self) -> Cow<'_, [u8]> {
@@ -68,36 +68,35 @@ impl Storable for UserV2 {
     }
 }
 
-
-impl Codec<UserV2> for VersionedUser {
-    fn decode(source: VersionedUser) -> UserV2 {
+impl Codec<UserV2> for UserCodec {
+    fn decode(source: UserCodec) -> UserV2 {
         match source {
-            VersionedUser::V1(user_v1) => UserV2 {
+            UserCodec::V1(user_v1) => UserV2 {
                 name: user_v1.0,
                 age: None,
             },
-            VersionedUser::V2(user_v2) => user_v2,
+            UserCodec::V2(user_v2) => user_v2,
         }
     }
 
-    fn encode(dest: UserV2) -> VersionedUser {
-        VersionedUser::V2(dest)
+    fn encode(dest: UserV2) -> UserCodec {
+        UserCodec::V2(dest)
     }
 }
 
-impl RefCodec<UserV2> for VersionedUser {
-    fn decode_ref<'a>(source: &'a VersionedUser) -> std::borrow::Cow<'a, UserV2> {
+impl RefCodec<UserV2> for UserCodec {
+    fn decode_ref<'a>(source: &'a UserCodec) -> std::borrow::Cow<'a, UserV2> {
         match source {
-            VersionedUser::V1(user_v1) => Cow::Owned(UserV2 {
+            UserCodec::V1(user_v1) => Cow::Owned(UserV2 {
                 name: user_v1.0.clone(),
                 age: None,
             }),
-            VersionedUser::V2(user_v2) => Cow::Borrowed(user_v2),
+            UserCodec::V2(user_v2) => Cow::Borrowed(user_v2),
         }
     }
 
-    fn encode(dest: UserV2) -> VersionedUser {
-        VersionedUser::V2(dest)
+    fn encode(dest: UserV2) -> UserCodec {
+        UserCodec::V2(dest)
     }
 }
 

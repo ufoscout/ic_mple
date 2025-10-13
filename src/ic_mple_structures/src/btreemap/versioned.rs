@@ -1,6 +1,6 @@
 use std::{hash::Hash, ops::RangeBounds};
 
-use ic_stable_structures::{btreemap, BTreeMap, Memory, Storable};
+use ic_stable_structures::{BTreeMap, Memory, Storable, btreemap};
 
 use crate::{BTreeMapIteratorStructure, btreemap::BTreeMapStructure, common::Codec};
 
@@ -63,15 +63,11 @@ where
     }
 
     fn pop_first(&mut self) -> Option<(K, V)> {
-        self.inner
-            .pop_first()
-            .map(|(k, v)| (k, C::decode(v)))
+        self.inner.pop_first().map(|(k, v)| (k, C::decode(v)))
     }
 
     fn pop_last(&mut self) -> Option<(K, V)> {
-        self.inner
-            .pop_last()
-            .map(|(k, v)| (k, C::decode(v)))
+        self.inner.pop_last().map(|(k, v)| (k, C::decode(v)))
     }
 
     fn contains_key(&self, key: &K) -> bool {
@@ -103,7 +99,10 @@ where
     }
 }
 
-pub struct VersionedBTreeMapIter<'a, K, V, C: Codec<V>, M>(btreemap::Iter<'a, K, C, M>, std::marker::PhantomData<V>)
+pub struct VersionedBTreeMapIter<'a, K, V, C: Codec<V>, M>(
+    btreemap::Iter<'a, K, C, M>,
+    std::marker::PhantomData<V>,
+)
 where
     K: Storable + Ord + Clone,
     V: Storable,
@@ -125,8 +124,7 @@ where
     }
 }
 
-impl<K, V, C: Codec<V>, M> BTreeMapIteratorStructure<K, V>
-    for VersionedBTreeMap<K, V, C, M>
+impl<K, V, C: Codec<V>, M> BTreeMapIteratorStructure<K, V> for VersionedBTreeMap<K, V, C, M>
 where
     K: Storable + Clone + Send + Sync + Hash + Eq + PartialEq + Ord,
     V: Storable + Clone + Send + Sync,
@@ -146,7 +144,10 @@ where
     }
 
     fn iter_from_prev_key(&self, bound: &K) -> Self::Iterator<'_> {
-        VersionedBTreeMapIter(self.inner.iter_from_prev_key(bound), std::marker::PhantomData)
+        VersionedBTreeMapIter(
+            self.inner.iter_from_prev_key(bound),
+            std::marker::PhantomData,
+        )
     }
 }
 
@@ -155,9 +156,7 @@ mod tests {
 
     use ic_stable_structures::VectorMemory;
 
-    use crate::{
-        test_utils::{Array, UserV1, UserV2, VersionedUser},
-    };
+    use crate::test_utils::{Array, UserCodec, UserV1, UserV2};
 
     use super::*;
 
@@ -167,15 +166,15 @@ mod tests {
         let mut btree_map = BTreeMap::new(memory.clone());
 
         // The map contains 3 users of different versions
-        btree_map.insert(1u32, VersionedUser::V1(UserV1("roger".to_string())));
+        btree_map.insert(1u32, UserCodec::V1(UserV1("roger".to_string())));
         btree_map.insert(
             2,
-            VersionedUser::V2(UserV2 {
+            UserCodec::V2(UserV2 {
                 name: "brian".to_string(),
                 age: Some(42),
             }),
         );
-        btree_map.insert(3, VersionedUser::V1(UserV1("freddie".to_string())));
+        btree_map.insert(3, UserCodec::V1(UserV1("freddie".to_string())));
 
         // The map contains 3 users of different versions but VersionedBTreeMap only uses UserV2
         let mut version_map = VersionedBTreeMap::with_map(btree_map);
@@ -212,9 +211,7 @@ mod tests {
 
     #[test]
     fn should_get_and_insert() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-            VectorMemory::default()
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
 
         assert!(map.is_empty());
 
@@ -289,9 +286,7 @@ mod tests {
 
     #[test]
     fn should_clear() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-            VectorMemory::default(),
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
         assert_eq!(None, map.insert(3, Array([3u8, 1])));
@@ -338,9 +333,7 @@ mod tests {
 
     #[test]
     fn should_replace_old_value() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _,>::new(
-            VectorMemory::default(),
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -360,9 +353,7 @@ mod tests {
 
     #[test]
     fn should_iterate() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-            VectorMemory::default(),
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -377,9 +368,7 @@ mod tests {
 
     #[test]
     fn should_iterate_over_range() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-            VectorMemory::default(),
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -393,9 +382,7 @@ mod tests {
 
     #[test]
     fn should_iterate_upper_bound() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-            VectorMemory::default(),
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
 
         assert_eq!(None, map.insert(1, Array([1u8, 1])));
         assert_eq!(None, map.insert(2, Array([2u8, 1])));
@@ -430,9 +417,7 @@ mod tests {
 
     #[test]
     fn should_get_and_insert_from_existing_map() {
-        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-            VectorMemory::default(),
-        );
+        let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(VectorMemory::default());
 
         map.inner.insert(1, Array([1u8, 1]));
         map.inner.insert(2, Array([2u8, 1]));
@@ -465,16 +450,12 @@ mod tests {
     fn should_reuse_existing_data_on_init() {
         let memory = VectorMemory::default();
         {
-            let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::init(
-                memory.clone(),
-            );
+            let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::init(memory.clone());
             map.insert(1, Array([1u8, 1]));
         }
 
         {
-            let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::init(
-                memory,
-            );
+            let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::init(memory);
             assert!(!map.is_empty());
             assert_eq!(Some(Array([1u8, 1])), map.get(&1));
         }
@@ -484,16 +465,12 @@ mod tests {
     fn should_erase_existing_data_on_new() {
         let memory = VectorMemory::default();
         {
-            let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-                memory.clone(),
-            );
+            let mut map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(memory.clone());
             map.insert(1, Array([1u8, 1]));
         }
 
         {
-            let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(
-                memory,
-            );
+            let map = VersionedBTreeMap::<u32, Array<2>, Array<2>, _>::new(memory);
             assert!(map.is_empty());
             assert_eq!(None, map.get(&1));
         }
