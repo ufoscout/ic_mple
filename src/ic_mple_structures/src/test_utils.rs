@@ -68,10 +68,9 @@ impl Storable for UserV2 {
     }
 }
 
-pub struct UserCodec;
 
-impl Codec<VersionedUser, UserV2> for UserCodec {
-    fn decode(&self, source: VersionedUser) -> UserV2 {
+impl Codec<UserV2> for VersionedUser {
+    fn decode(source: VersionedUser) -> UserV2 {
         match source {
             VersionedUser::V1(user_v1) => UserV2 {
                 name: user_v1.0,
@@ -81,13 +80,13 @@ impl Codec<VersionedUser, UserV2> for UserCodec {
         }
     }
 
-    fn encode(&self, dest: UserV2) -> VersionedUser {
+    fn encode(dest: UserV2) -> VersionedUser {
         VersionedUser::V2(dest)
     }
 }
 
-impl RefCodec<VersionedUser, UserV2> for UserCodec {
-    fn decode_ref<'a>(&self, source: &'a VersionedUser) -> std::borrow::Cow<'a, UserV2> {
+impl RefCodec<UserV2> for VersionedUser {
+    fn decode_ref<'a>(source: &'a VersionedUser) -> std::borrow::Cow<'a, UserV2> {
         match source {
             VersionedUser::V1(user_v1) => Cow::Owned(UserV2 {
                 name: user_v1.0.clone(),
@@ -97,7 +96,7 @@ impl RefCodec<VersionedUser, UserV2> for UserCodec {
         }
     }
 
-    fn encode(&self, dest: UserV2) -> VersionedUser {
+    fn encode(dest: UserV2) -> VersionedUser {
         VersionedUser::V2(dest)
     }
 }

@@ -1,52 +1,41 @@
 use std::borrow::Cow;
 
-/// A codec for a data type.
-pub trait Codec<S, D: Clone> {
-    /// Dencodes a `Source` value into a `Destination` value.
-    fn decode(&self, source: S) -> D;
-
-    /// Encodes a `Destination` value into a `Source` value.
-    fn encode(&self, dest: D) -> S;
-}
+use ic_stable_structures::Storable;
 
 /// A codec for a data type.
-pub trait RefCodec<S, D: Clone> {
+pub trait Codec<D>: Storable {
     /// Dencodes a `Source` value into a `Destination` value.
-    fn decode_ref<'a>(&self, source: &'a S) -> Cow<'a, D>;
+    fn decode(source: Self) -> D;
 
     /// Encodes a `Destination` value into a `Source` value.
-    fn encode(&self, dest: D) -> S;
+    fn encode(dest: D) -> Self;
 }
 
-/// Default NoOps codec.
-pub struct DefaultCodec<D> {
-    phantom: std::marker::PhantomData<D>,
+/// A codec for a data type.
+pub trait RefCodec<D: Clone>: Storable {
+    /// Dencodes a `Source` value into a `Destination` value.
+    fn decode_ref<'a>(source: &'a Self) -> Cow<'a, D>;
+
+    /// Encodes a `Destination` value into a `Source` value.
+    fn encode(dest: D) -> Self;
 }
 
-impl<D> Default for DefaultCodec<D> {
-    fn default() -> Self {
-        Self {
-            phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-impl<D: Clone> Codec<D, D> for DefaultCodec<D> {
-    fn decode(&self, source: D) -> D {
+impl<D: Storable> Codec<D> for D {
+    fn decode(source: D) -> D {
         source
     }
 
-    fn encode(&self, dest: D) -> D {
+    fn encode(dest: D) -> D {
         dest
     }
 }
 
-impl<D: Clone> RefCodec<D, D> for DefaultCodec<D> {
-    fn decode_ref<'a>(&self, source: &'a D) -> Cow<'a, D> {
+impl<D: Storable + Clone> RefCodec<D> for D {
+    fn decode_ref<'a>(source: &'a D) -> Cow<'a, D> {
         Cow::Borrowed(source)
     }
 
-    fn encode(&self, dest: D) -> D {
+    fn encode(dest: D) -> D {
         dest
     }
 }
