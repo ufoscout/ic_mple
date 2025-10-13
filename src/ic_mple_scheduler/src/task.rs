@@ -1,10 +1,11 @@
+use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
 
-use candid::CandidType;
+use candid::{CandidType, Decode, Encode};
 use ic_mple_structures::{Bound, Storable};
+use serde::Deserialize;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
 use crate::SchedulerError;
 use crate::retry::{BackoffPolicy, RetryPolicy, RetryStrategy};
@@ -23,7 +24,7 @@ pub trait Task {
 }
 
 /// A scheduled task is a task that is ready to be executed.
-#[derive(CandidType, Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(CandidType, Deserialize, PartialEq, Eq, Debug)]
 pub struct ScheduledTask<T: Task> {
     pub(crate) task: T,
     pub(crate) options: TaskOptions,
@@ -54,7 +55,7 @@ impl<T: Task> From<(T, TaskOptions)> for ScheduledTask<T> {
     }
 }
 
-#[derive(CandidType, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(CandidType, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct InnerScheduledTask<T: Task> {
     pub(crate) id: u64,
     pub(crate) task: T,
@@ -94,26 +95,24 @@ impl<T: Task> InnerScheduledTask<T> {
     }
 }
 
-impl<T: 'static + Task + Serialize + DeserializeOwned> Storable for InnerScheduledTask<T> {
+impl<T: 'static + Task + CandidType + DeserializeOwned> Storable for InnerScheduledTask<T> {
     fn to_bytes(&self) -> std::borrow::Cow<'_, [u8]> {
-        bincode::serialize(self)
-            .expect("failed to serialize ScheduledTask")
-            .into()
+        Cow::from(Encode!(&self).unwrap())
     }
 
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        bincode::deserialize(&bytes).expect("failed to deserialize ScheduledTask")
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(&bytes, Self).unwrap()
     }
 
     fn into_bytes(self) -> Vec<u8> {
-        bincode::serialize(&self).expect("failed to serialize ScheduledTask")
+        Encode!(&self).unwrap()
     }
 
     const BOUND: Bound = Bound::Unbounded;
 }
 
 /// The status of a task in the scheduler
-#[derive(CandidType, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(CandidType, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum TaskStatus {
     /// The task is waiting to be executed
     Waiting { timestamp_secs: u64 },
@@ -180,7 +179,7 @@ impl TaskStatus {
 }
 
 /// Scheduling options for a task
-#[derive(CandidType, Default, Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(CandidType, Default, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct TaskOptions {
     pub(crate) failures: u32,
     pub(crate) execute_after_timestamp_in_secs: u64,
@@ -231,7 +230,7 @@ mod test {
 
     use super::*;
 
-    #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+    #[derive(CandidType, Deserialize, PartialEq, Eq, Debug)]
     struct TestTask {}
 
     impl Task for TestTask {

@@ -2,10 +2,10 @@ use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use candid::CandidType;
 use ic_mple_structures::{BTreeMapIteratorStructure, BTreeMapStructure, CellStructure};
 use ic_mple_utils::ic_api::{IcApi, IcTrait};
 use log::{debug, warn};
-use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::SchedulerError;
@@ -35,7 +35,7 @@ where
 
 impl<T, P, S> Scheduler<T, P, S>
 where
-    T: 'static + Task + Serialize + DeserializeOwned + Clone,
+    T: 'static + Task + CandidType + DeserializeOwned + Clone,
     T::Ctx: Clone,
     P: 'static
         + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
@@ -52,7 +52,7 @@ where
 
 impl<T, P, S, IC: IcTrait + 'static> Scheduler<T, P, S, IC>
 where
-    T: 'static + Task + Serialize + DeserializeOwned + Clone,
+    T: 'static + Task + CandidType + DeserializeOwned + Clone,
     T::Ctx: Clone,
     P: 'static
         + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
@@ -289,7 +289,7 @@ pub trait TaskScheduler<T: 'static + Task> {
 
 impl<T, P, S, IC: IcTrait> Clone for Scheduler<T, P, S, IC>
 where
-    T: 'static + Task + Serialize + DeserializeOwned,
+    T: 'static + Task + CandidType + DeserializeOwned,
     P: 'static
         + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
         + BTreeMapStructure<u64, InnerScheduledTask<T>>,
@@ -311,7 +311,7 @@ where
 
 impl<T, P, S, IC: IcTrait + 'static> TaskScheduler<T> for Scheduler<T, P, S, IC>
 where
-    T: 'static + Task + Serialize + DeserializeOwned + Clone,
+    T: 'static + Task + CandidType + DeserializeOwned + Clone,
     T::Ctx: Clone,
     P: 'static
         + BTreeMapIteratorStructure<u64, InnerScheduledTask<T>>
@@ -382,9 +382,10 @@ mod test {
         use std::sync::atomic::AtomicBool;
         use std::time::Duration;
 
+        use candid::CandidType;
         use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use rand::random;
-        use serde::{Deserialize, Serialize};
+        use serde::Deserialize;
 
         use super::*;
 
@@ -392,7 +393,7 @@ mod test {
             pub static STATE: RefCell<HashMap<u64, Vec<String>>> = RefCell::new(HashMap::new())
         }
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         pub enum SimpleTaskSteps {
             One { id: u64 },
             Two { id: u64 },
@@ -560,7 +561,7 @@ mod test {
 
         use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use rand::random;
-        use serde::{Deserialize, Serialize};
+        use serde::Deserialize;
 
         use super::*;
         use crate::task::TaskOptions;
@@ -569,7 +570,7 @@ mod test {
             pub static STATE: RefCell<HashMap<u64, Vec<String>>> = RefCell::new(HashMap::new())
         }
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         pub enum SimpleTask {
             StepOne { id: u64 },
         }
@@ -652,7 +653,7 @@ mod test {
 
         use ic_mple_structures::{StableBTreeMap, StableCell, VectorMemory};
         use rand::random;
-        use serde::{Deserialize, Serialize};
+        use serde::Deserialize;
 
         use super::*;
         use crate::retry::RetryPolicy;
@@ -668,7 +669,7 @@ mod test {
             static STATE: RefCell<HashMap<u64, Output>> = RefCell::new(HashMap::new());
         }
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         pub enum SimpleTask {
             StepOne { id: u64, fails: u32 },
         }
@@ -709,7 +710,7 @@ mod test {
             }
         }
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         pub struct UnrecoverableTask {
             id: u64,
             tries_before_failure: u32,
@@ -1164,7 +1165,7 @@ mod test {
         use super::*;
         use crate::retry::BackoffPolicy;
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         struct SucceedingTask {}
         impl Task for SucceedingTask {
             type Ctx = ();
@@ -1178,7 +1179,7 @@ mod test {
             }
         }
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         struct FailingTask {}
         impl Task for FailingTask {
             type Ctx = ();
@@ -1196,7 +1197,7 @@ mod test {
             static COMPLETE: Arc<Notify> = Arc::new(Notify::new());
         }
 
-        #[derive(Serialize, Deserialize, Debug, Clone)]
+        #[derive(CandidType, Deserialize, Debug, Clone)]
         struct AwaitingTask {}
 
         impl AwaitingTask {

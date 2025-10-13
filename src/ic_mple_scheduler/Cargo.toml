@@ -10,7 +10,6 @@ authors.workspace = true
 keywords = ["IC", "internet-computer", "scheduler"]
 
 [dependencies]
-bincode = { workspace = true }
 candid = { workspace = true }
 ic-cdk = { workspace = true }
 ic-cdk-timers = { workspace = true }
