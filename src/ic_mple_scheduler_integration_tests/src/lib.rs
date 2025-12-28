@@ -114,11 +114,11 @@ pub fn schedule_tasks(tasks: Vec<DummyTask>) -> Vec<u64> {
 }
 
 #[update]
-pub fn run_scheduler() {
-    do_run_scheduler();
+pub async fn run_scheduler() {
+    do_run_scheduler().await;
 }
 
-fn do_run_scheduler() {
+async fn do_run_scheduler() {
     ic_cdk::println!("run_scheduler");
     let scheduler = SCHEDULER.with_borrow(|scheduler| scheduler.clone());
     scheduler.run(()).unwrap();

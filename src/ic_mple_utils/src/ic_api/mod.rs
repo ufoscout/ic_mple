@@ -82,7 +82,7 @@ impl IcTrait for IcPlatform {
     }
 
     fn spawn_detached<F: 'static + Future<Output = ()>>(&self, future: F) {
-        ic_cdk_timers::set_timer(std::time::Duration::from_millis(0), || {
+        ic_cdk_timers::set_timer(std::time::Duration::from_millis(0), async {
             spawn(future);
         });
     }

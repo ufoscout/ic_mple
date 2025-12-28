@@ -19,17 +19,17 @@ ic_mple_scheduler = { path = "src/ic_mple_scheduler", version = "0.16.1" }
 ic_mple_structures = { path = "src/ic_mple_structures", version = "0.16.1" }
 ic_mple_utils = { path = "src/ic_mple_utils", version = "0.16.1" }
 
-arc-swap = "1.6"
+arc-swap = "1.8"
 candid = { version = "0.10" }
 env_filter = "0.1.1"
 flate2 = "1"
 humantime = { version = "2", default-features = false }
-ic-agent = "0.44"
-ic-cdk = "0.18"
-ic-cdk-timers = "0.12"
+ic-agent = "0.45"
+ic-cdk = "0.19"
+ic-cdk-timers = "1.0"
 ic-stable-structures = "0.7"
 log = "0.4"
-pocket-ic = "10.0"
+pocket-ic = "11.0"
 rand = "0.8"
 reqwest = { version = "0.12", default-features = false, features = [
   "gzip",
