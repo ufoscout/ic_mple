@@ -11,13 +11,13 @@ repository = "https://github.com/ufoscout/ic_mple"
 authors = ["Francesco Cina <ufoscout@gmail.com>"]
 
 [workspace.dependencies]
-ic_mple_client = { path = "src/ic_mple_client", version = "0.16.1" }
-ic_mple_log = { path = "src/ic_mple_log", version = "0.16.1" }
-ic_mple_permissions = { path = "src/ic_mple_permissions", version = "0.16.1" }
-ic_mple_pocket_ic = { path = "src/ic_mple_pocket_ic", version = "0.16.1" }
-ic_mple_scheduler = { path = "src/ic_mple_scheduler", version = "0.16.1" }
-ic_mple_structures = { path = "src/ic_mple_structures", version = "0.16.1" }
-ic_mple_utils = { path = "src/ic_mple_utils", version = "0.16.1" }
+ic_mple_client = { path = "src/ic_mple_client", version = "0.17.0" }
+ic_mple_log = { path = "src/ic_mple_log", version = "0.17.0" }
+ic_mple_permissions = { path = "src/ic_mple_permissions", version = "0.17.0" }
+ic_mple_pocket_ic = { path = "src/ic_mple_pocket_ic", version = "0.17.0" }
+ic_mple_scheduler = { path = "src/ic_mple_scheduler", version = "0.17.0" }
+ic_mple_structures = { path = "src/ic_mple_structures", version = "0.17.0" }
+ic_mple_utils = { path = "src/ic_mple_utils", version = "0.17.0" }
 
 arc-swap = "1.8"
 candid = { version = "0.10" }
