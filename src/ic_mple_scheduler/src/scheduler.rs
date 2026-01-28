@@ -173,8 +173,7 @@ where
             }
         }
 
-        let now_timestamp_secs = self.ic.time_secs();
-        let now_timestamp_nanos = self.ic.time_nanos();
+        let now_timestamp_nanos = now_timestamp_secs * 1_000_000_000;
         self.ic.spawn_detached(async move {
 
             let task = task_scheduler.pending_tasks.borrow().get(&task_key);
@@ -610,7 +609,7 @@ mod test {
                     let sequence = StableCell::new(VectorMemory::default(), 0);
                     let scheduler = Scheduler::new(map, sequence);
                     let id = random();
-                    let timestamp: u64 = random();
+                    let timestamp = random::<u32>() as u64; // avoid multiplication overflows
 
                     scheduler.append_task(
                         (
