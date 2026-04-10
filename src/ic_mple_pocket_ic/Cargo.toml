@@ -15,11 +15,7 @@ flate2 = { workspace = true }
 log = { workspace = true }
 pocket-ic = { workspace = true }
 reqwest = { workspace = true, features = [
-  "blocking",
-  "gzip",
-  "json",
-  "rustls-tls",
-  "trust-dns",
+  "blocking"
 ] }
 tokio = { workspace = true, features = ["sync"] }
 
