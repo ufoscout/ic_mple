@@ -21,15 +21,15 @@ ic_mple_utils = { path = "src/ic_mple_utils", version = "0.18.0" }
 
 arc-swap = "1.9"
 candid = { version = "0.10" }
-env_filter = "1.0"
+env_filter = "2.0"
 flate2 = "1"
 humantime = { version = "2", default-features = false }
-ic-agent = "0.47"
+ic-agent = "0.49"
 ic-cdk = "0.20"
 ic-cdk-timers = "1.0"
 ic-stable-structures = "0.7"
 log = "0.4"
-pocket-ic = "13.0"
+pocket-ic = "15.0"
 rand = "0.8"
 reqwest = { version = "0.13", default-features = false, features = [
   "gzip",

@@ -133,6 +133,7 @@ mod test {
             method_name: "some".to_owned(),
             arg: vec![],
             nonce: None,
+            sender_info: None,
         };
 
         let signature = identity.sign(&envelop).unwrap();
